@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 
-def snapshot_distances(tnet, dist='eucledian'):
+def compute_snapshot_distances(tnet, dist='eucledian'):
     snapshots = tnet.df_to_array()
     # put time as zeroth axis
     snapshots = np.swapaxes(snapshots, 0, 2)
@@ -23,4 +23,5 @@ def snapshot_distances(tnet, dist='eucledian'):
     # dist_mat_condensed = dist_mat[id_l]
     dist_mat_condensed = dist_mat[id_u]
 
-    return dist_mat_condensed
+    return dist_mat, dist_mat_condensed
+

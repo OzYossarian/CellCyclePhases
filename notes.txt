@@ -13,7 +13,16 @@ Need to install XPP (interchangably called XPPAUT). Instructions available at 'h
 Add the executable 'xppaut' to your PATH so that it can be executed (e.g. in xppcall.py).
 
 
-INFORMAL SCRIBBLINGS:
+MORE SCRIBBLINGS:
 
 
-Missing file 'tedges_combined_weighted_binary_method_percentage_minmax_p_0.5_clean2.tedges'
+Missing file 'tedges_combined_weighted_binary_method_percentage_minmax_p_0.5_clean2.tedges' - have used the non-minimax
+one instead.
+
+Methods 'compute_snapshot_distances' and 'plot_time_clusters' mentioned in jupyter notebook but missing from
+cluster_snapshots.py? Renamed snapshot_distances to compute_snapshot_distances and returned dist_mat as well as
+dist_mat_condensed to see if that would get me anywhere.
+
+Cell 20 in notebook doesn't like key CLN3.
+
+Cell 32 says 'dist_mat_full' not defined.

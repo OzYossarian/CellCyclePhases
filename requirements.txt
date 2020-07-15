@@ -1,0 +1,9 @@
+pandas
+networkx
+jupyter
+numpy
+matplotlib
+matplotlib-label-lines
+seaborn
+pathpy
+teneto

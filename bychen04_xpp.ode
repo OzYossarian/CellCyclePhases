@@ -1,0 +1,318 @@
+#cell033.ode, esbfb5=2.
+# cell03.ode =notar1.ode and notar7_IC.set,change notation to be the same as in paper.
+
+BB(Va,Vi,Ja,Ji)= Vi-Va+Ja*Vi+Ji*Va
+GK(Va,Vi,Ja,Ji)= 2*Ji*Va/(BB(Va,Vi,Ja,Ji)+sqrt(BB(Va,Vi,Ja,Ji)^2-4*(Vi-Va)*Ji*Va))
+
+BCK2  = B0*MASS
+CLN3  = C0*Dn3*MASS/(Jn3+Dn3*MASS)
+SIC1T = SIC1+C2+C5+SIC1P+C2P+C5P
+CDC6T = CDC6+F2+F5+CDC6P+F2P+F5P
+RENTP = CDC14T-RENT-CDC14
+NET1P  =NET1T-NET1-CDC14T+CDC14
+PE    = ESP1T-ESP1
+
+Vasbf= kasbf*(esbfn2*CLN2+esbfn3*(CLN3+BCK2)+esbfb5*CLB5)
+
+Vdb2 = kdb2'+kdb2"*CDH1+kdb2p*CDC20
+
+Vdb5 = kdb5'+kdb5"*Cdc20
+
+Vkpc1= kd1c1+kd2c1*(ec1n3*CLN3+ec1k2*BCK2+ec1n2*CLN2+ec1b2*CLB2+ec1b5*CLB5)/(Jd2c1+SIC1T)
+
+Vppc1= kppc1*CDC14
+
+Vkpf6= kd1f6+kd2f6*(ef6n3*CLN3+ef6k2*BCK2+ef6n2*CLN2+ef6b2*CLB2+ef6b5*CLB5)/(Jd2f6+CDC6T)
+
+Vppf6= kppf6*CDC14
+
+Vaiep= kaiep*CLB2
+
+Vacdh= kacdh'+kacdh"*CDC14
+
+Vicdh= kicdh'+kicdh"*(eicdhn3*CLN3+eicdhn2*CLN2+eicdhb5*CLB5+eicdhb2*CLB2)
+
+Vppnet= kppnet'+kppnet"*PPX
+
+Vkpnet=(kkpnet'+kkpnet"*CDC15)*MASS
+
+Vdpds= kd1pds'+kd2pds"*Cdc20+kd3pds"*CDH1
+
+Vdppx= kdppx'+kdppx"*(J20ppx+Cdc20)*Jpds/(Jpds+PDS1)
+
+SBF  = GK(Vasbf, kisbf'+kisbf"*CLB2, Jasbf, Jisbf)
+
+MCM1 = GK(kamcm*CLB2, kimcm, Jamcm, Jimcm)
+
+
+dMASS/dt = kg*MASS
+
+dCLN2/dt  = (ksn2'+ksn2"*SBF)*MASS-kdn2*CLN2
+
+
+dCLB2/dt  =(ksb2'+ksb2"*MCM1)*MASS+(kd3c1*C2P+kd3f6*F2P)+(kdib2*C2+kdif2*F2) \
+           -(Vdb2+kasb2*Sic1+kasf2*CDC6)*CLB2
+
+
+dCLB5/dt  = (ksb5'+ksb5"*SBF)*MASS+(kd3c1*C5P+kd3f6*F5P)+(kdib5*C5+kdif5*F5) \
+           -(Vdb5+kasb5*Sic1+kasf5*CDC6)*CLB5
+
+
+dSIC1/dt =(ksc1'+ksc1"*SWI5)+(Vdb2*C2+Vdb5*C5)+(kdib2*C2+kdib5*C5)+Vppc1*SIC1P \
+          -(kasb2*CLB2+kasb5*CLB5+Vkpc1)*SIC1
+
+
+dCDC6/dt =(ksf6'+ksf6"*SWI5+ksf6"'*SBF)+(Vdb2*F2+Vdb5*F5)+(kdif2*F2+kdif5*F5)+Vppf6*CDC6P \
+          -(kasf2*CLB2+kasf5*CLB5+Vkpf6)*CDC6
+
+
+dC2/dt   = kasb2*CLB2*SIC1+Vppc1*C2P-(kdib2+Vdb2+Vkpc1)*C2
+
+dC5/dt   = kasb5*CLB5*SIC1+Vppc1*C5P-(kdib5+Vdb5+Vkpc1)*C5
+
+dF2/dt   = kasf2*CLB2*CDC6+Vppf6*F2P-(kdif2+Vdb2+Vkpf6)*F2
+
+dF5/dt   = kasf5*CLB5*CDC6+Vppf6*F5P-(kdif5+Vdb5+Vkpf6)*F5
+
+dSIC1P/dt=Vkpc1*SIC1-(Vppc1+kd3c1)*SIC1P+Vdb2*C2P+Vdb5*C5P
+
+dC2P/dt  =Vkpc1*C2-(Vppc1+kd3c1+Vdb2)*C2P
+
+dC5P/dt  =Vkpc1*C5-(Vppc1+kd3c1+Vdb5)*C5P
+
+
+dCDC6P/dt=Vkpf6*CDC6-(Vppf6+kd3f6)*CDC6P+Vdb2*F2P+Vdb5*F5P
+
+dF2P/dt  =Vkpf6*F2-(Vppf6+kd3f6+Vdb2)*F2P
+
+dF5P/dt  =Vkpf6*F5-(Vppf6+kd3f6+Vdb5)*F5P
+
+
+dSWI5T/dt = ksswi'+ksswi"*MCM1-kdswi*SWI5T
+
+dSWI5/dt  = ksswi'+ksswi"*MCM1+kaswi*CDC14*(SWI5T-SWI5)-(kiswi*CLB2+kdswi)*SWI5
+
+dIEP/dt   = Vaiep*(1-IEP)/(Jaiep+1-IEP)-kiiep*IEP/(Jiiep+IEP)
+
+dCDC20T/dt= (ks20'+ks20"*MCM1)-kd20*CDC20T
+
+dCDC20/dt = (ka20'+ka20"*IEP)*(CDC20T-CDC20)-(Vi20+kd20)*CDC20
+
+
+dCDH1T/dt = kscdh - kdcdh*CDH1T
+
+dCDH1/dt  =kscdh-kdcdh*CDH1+Vacdh*(CDH1T-CDH1)/(Jacdh+CDH1T-CDH1) \
+           -Vicdh*CDH1/(Jicdh+CDH1)
+
+dCDC14T/dt =ks14 -  kd14*CDC14T
+
+dCDC14/dt =(kdirent*RENT+kdirentp*RENTP) \
+          -(kasrent*NET1+kasrentp*NET1P)*CDC14 \
+          +ks14-kd14*CDC14+kdnet*(RENT+RENTP)
+
+dNET1T/dt = ksnet - kdnet*NET1T
+
+dNET1/dt  = kdirent*RENT-kasrent*NET1*CDC14+Vppnet*NET1P-Vkpnet*NET1 \
+            +ksnet-kdnet*NET1+kd14*RENT
+
+dRENT/dt  =-kdirent*RENT+kasrent*NET1*CDC14+Vppnet*RENTP-Vkpnet*RENT \
+            -(kd14+kdnet)*RENT
+
+dTEM1/dt  = lte1*(TEM1T-TEM1)/(Jatem+TEM1T-TEM1)-BUB2*TEM1/(Jitem+TEM1)
+
+dCdc15/dt= (ka15'*(Tem1T-Tem1)+ka15"*Tem1+ka15p*Cdc14)*(Cdc15T-Cdc15)-ki15*Cdc15
+
+dPPX/dt   = ksppx-Vdppx*PPX
+
+dPDS1/dt  = (kspds'+ks1pds"*SBF+ks2pds"*MCM1)+kdiesp*PE-(Vdpds+kasesp*ESP1)*PDS1
+
+dESP1/dt  = -kasesp*PDS1*ESP1+(kdiesp+Vdpds)*PE
+
+dORI/dt   = ksori*(eorib5*CLB5+eorib2*CLB2)-kdori*ORI
+
+dBUD/dt   = ksbud*(ebudn2*CLN2+ebudn3*CLN3+ebudb5*CLB5)-kdbud*BUD
+
+dSPN/dt   = ksspn*CLB2/(Jspn+CLB2)-kdspn*SPN
+
+dVi20/dt = 0
+
+dlte1/dt = 0
+
+dBub2/dt = 0
+
+global +1 {ORI-1} {Vi20=ki20"; Bub2=Bub2h}
+
+global +1 {SPN-1} {Vi20=ki20'; lte1=lte1h; Bub2=Bub2l}
+
+global -1 {CLB2-KEZ} {MASS=abs(MorD+f-1)*MASS; Lte1= Lte1l; BUD=0; SPN=0}
+
+global -1 {CLB2+CLB5-KEZ2} {ORI=0}
+
+aux CLB2T=CLB2+C2+F2+C2P+F2P
+aux CLB5T=CLB5+C5+F5+C5P+F5P
+aux CKIT=SIC1T+CDC6T
+aux SIC1T=SIC1T
+aux MCM1=MCM1
+aux SBF=SBF
+
+param  B0=0.054,     C0=0.4,        Dn3=1,        Jn3=6
+
+param  ksn2'=0,      ksn2"=0.15,    kdn2=0.12
+
+param  esbfn2=2,     esbfn3=10,    esbfb5=2
+
+param  kasbf=0.38,   kisbf'=0.6,   kisbf"=8
+
+param  Jasbf=0.01,   Jisbf=0.01
+
+param  ksb2'=0.001,  ksb2"=0.04,   kdb2'=0.003
+
+param  kdb2"=0.4,    kdb2p=0.15
+
+param  kamcm=1,      kimcm=0.15,   Jamcm=0.1,    Jimcm=0.1
+
+param  ksb5'=0.0008,  ksb5"=0.005
+
+param  kdb5'=0.01,   kdb5"=0.16
+
+param  ksc1'=0.012,  ksc1"=0.12
+
+param  kd1c1=0.01,   kd2c1=1,      Jd2c1=0.05
+
+param  ec1k2=0.03,   ec1n2=0.06,   ec1b5=0.1,   ec1b2=0.45,    ec1n3=0.3
+
+param  kasb2=50,     kdib2=0.05,   kasb5=50,     kdib5=0.06
+
+param  kd3c1=1,      kppc1=4
+
+param  ksf6'=0.024,  ksf6"=0.12,   ksf6"'=0.004
+
+param  kd1f6=0.01,   kd2f6=1,      Jd2f6=0.05
+
+param  ef6k2=0.03,   ef6n2=0.06,   ef6b5=0.1,    ef6b2=0.55,   ef6n3=0.3
+
+param  kasf2=15,     kdif2=0.5,    kasf5=0.01,   kdif5=0.01
+
+param  kd3f6=1,      kppf6=4
+
+param  ksswi'=0.005, ksswi"=0.08,   kdswi=0.08,    kaswi=2,    kiswi=0.05
+
+param  kaiep=0.1,    kiiep=0.15,   Jaiep=0.1,    Jiiep=0.1
+
+param  ks20'=0.006,  ks20"=0.6,    kd20=0.3
+
+param  ka20'=0.05,   ka20"=0.2,    ki20'=0.01,   ki20"=8
+
+param  kscdh=0.01,   kdcdh=0.01
+
+param  kacdh'=0.01,  kacdh"=0.8,   Jicdh=0.03,   Jacdh=0.03
+
+param  kicdh'=0.001, kicdh"=0.08
+
+param  eicdhn2=0.4,  eicdhn3=0.25, eicdhb5=8,   eicdhb2=1.2
+
+param  ks14=0.2,     kd14=0.1
+
+param  ksnet=0.084,  kdnet=0.03
+
+param  kasrent=200,  kasrentp=1,   kdirent=1,    kdirentp=2
+
+param  kppnet'=0.05, kppnet"=3,    kkpnet'=0.01, kkpnet"=0.6
+
+param  kspds'=0,     ks1pds"=0.03, ks2pds"=0.055
+
+param  kd1pds'=0.01, kd2pds"=0.2,  kd3pds"=0.04
+
+param  kasesp=50,    kdiesp=0.5,   ESP1T=1
+
+param  ksppx=0.1,    Jpds=0.04
+
+param  kdppx'=0.17,  kdppx"=2,     J20ppx=0.15
+
+param  ksori=2,      kdori=0.06,   eorib5=0.9,   eorib2=0.45
+
+param  ksbud=0.2,    kdbud=0.06,   ebudn2=0.25,  ebudn3=0.05,  ebudb5=1
+
+param  ksspn=0.1,   kdspn=0.06,   Jspn=0.14
+
+param  lte1l=0.1,    lte1h=1,      Bub2l=0.2,    Bub2h=1
+
+param  TEM1T=1,      jatem=0.1,    Jitem=0.1
+
+param  Cdc15T=1,     ka15'=0.002,  ka15"=1,      ka15p=0.001, ki15=0.5
+
+param  KEZ=0.3,      mdt=90,       MorD=1
+
+param  kez2=0.2
+
+# The following parameters specify the values we used to simulate overproduction
+# by GAL promoters for various genes.
+
+param  galcln2=0.12, galclb2=0.12, galclb5=0.012, galsic1=0.12, galcdc6=0.12, galcdc20=6
+
+param  galcln3=20,   galtem1=20,   galcdc15=20
+
+# The following parameters specify the fraction of activity remains in net1-ts, TAB6-1
+# and Clb2-db-del.
+
+param  net1ts_f=0.005,  tab61_f=0.04, clb2db_f=0.075
+
+
+# derived parameter f (for division of mass between mother/daughter)
+# to satisfy Hartwell & Ungar's experiment. kg is growth rate,
+# D is daughtercycle time, f is the fraction of mass given to daughter
+
+!kg=ln(2)/mdt
+!D=1.026/kg-32
+!f=exp(-kg*D)
+
+@ Maxstore=100000, bound=2000, dt=1
+@ Meth=Stiff, total=1000, xplot=t, xlo=0, xhi=1000, ylo=0, yhi=3
+@ NPLOT=8, yp1=MASS, yp2=CLB2T, yp3=CKIT, yp4=CDH1, yp5=CDC20, yp6=Pds1, yp7=CLN2
+
+
+INIT MASS=1.206019401550293
+INIT CLN2=0.0652511790394783
+INIT CLB2=0.1469227224588394
+INIT CLB5=0.05180418863892555
+INIT SIC1=0.02287768945097923
+INIT CDC6=0.1075804308056831
+INIT C2=0.2384047210216522
+INIT C5=0.07008149474859238
+INIT F2=0.2360586225986481
+INIT F5=7.245147571666166e-005
+
+INIT SIC1P=0.006410160101950169
+INIT C2P=0.02403404749929905
+INIT C5P=0.006878305226564407
+INIT CDC6P=0.01548638287931681
+INIT F2P=0.02739384770393372
+INIT F5P=7.90633202996105e-006
+INIT SWI5T=0.9764602780342102
+INIT SWI5=0.9561624526977539
+INIT IEP=0.1015391126275063
+INIT CDC20T=1.916339993476868
+
+INIT CDC20=0.4442965388298035
+INIT CDH1T=1
+INIT CDH1=0.930499255657196
+INIT CDC14T=2
+INIT CDC14=0.46834397315979
+INIT NET1T=2.799999952316284
+INIT NET1=0.01864561997354031
+INIT RENT=1.049547672271729
+INIT TEM1=0.9038969278335571
+INIT CDC15=0.6565329432487488
+
+INIT PPX=0.1231788992881775
+INIT PDS1=0.02561234869062901
+INIT ESP1=0.3013133406639099
+INIT ORI=0.0009094525594264269
+INIT BUD=0.008473447524011135
+INIT SPN=0.03056218847632408
+INIT VI20=0.009999999776482582
+INIT LTE1=0.1000000014901161
+INIT BUB2=0.2000000029802322
+
+
+done

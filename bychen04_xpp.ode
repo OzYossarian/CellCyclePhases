@@ -155,6 +155,8 @@ aux SIC1T=SIC1T
 aux MCM1=MCM1
 aux SBF=SBF
 
+aux CLN3=CLN3
+
 param  B0=0.054,     C0=0.4,        Dn3=1,        Jn3=6
 
 param  ksn2'=0,      ksn2"=0.15,    kdn2=0.12
@@ -267,7 +269,7 @@ param  net1ts_f=0.005,  tab61_f=0.04, clb2db_f=0.075
 !f=exp(-kg*D)
 
 @ Maxstore=100000, bound=2000, dt=1
-@ Meth=Stiff, total=1000, xplot=t, xlo=0, xhi=1000, ylo=0, yhi=3
+@ Meth=Stiff, total=500, xplot=t, xlo=0, xhi=500, ylo=0, yhi=3
 @ NPLOT=8, yp1=MASS, yp2=CLB2T, yp3=CKIT, yp4=CDH1, yp5=CDC20, yp6=Pds1, yp7=CLN2
 
 

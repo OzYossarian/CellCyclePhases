@@ -8,6 +8,7 @@ def temporal_network_from_file(filepath, separator):
     # edges are of type pandas.DataFrame
     edges = pd.read_csv(filepath, sep=separator, engine='python')
 
+    # ToDo: is this necessary??
     # Columns must be named i, j and t, with optional weight column
     number_of_columns = edges.shape[1]
     if number_of_columns == 3:

@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 sb.set_context('paper')
 
-from xppcall import xpprun, read_pars_values_from_file
+from ODEs.xppcall import xpprun
+
 
 # =========================================================
 
@@ -12,7 +13,7 @@ def normed_series(x) :
     return x / np.max(x)
        
 #================= run chen model
-npa, variables = xpprun('bychen04_xpp.ode', clean_after=True)
+npa, variables = xpprun('../example_data/bychen04_xpp.ode', clean_after=True)
 
 i_st = 100
 i_end = 300

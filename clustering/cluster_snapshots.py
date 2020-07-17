@@ -10,13 +10,13 @@ import seaborn as sb
 sb.set_context("paper")
 
 
-def compute_snapshot_distances(tnet, dist='eucledian'):
+def compute_snapshot_distances(tnet, dist='euclidean'):
     """
     Compute pairwise distance between snapshots
 
     parameters
     ----------
-    - dist : string ('cosinesim', 'eucledian', 'eucledian_flat')
+    - dist : string ('cosinesim', 'euclidean', 'euclidean_flat')
 
     returns
     -------
@@ -31,21 +31,18 @@ def compute_snapshot_distances(tnet, dist='eucledian'):
     snapshot_flat = snapshots.reshape(T, -1)  # each matrix is flattened, represented as a vector
 
     if dist == 'cosinesim':
-
         dist_mat = 1 - cosine_similarity(snapshot_flat, snapshot_flat)
         np.fill_diagonal(dist_mat, 0)  # otherwise, 1e-15 but negative values, cause problems later
 
-    elif dist == 'eucledian' or dist == 'eucledian_flat':
-
-        if dist == 'eucledian':
+    elif dist == 'euclidean' or dist == 'euclidean_flat':
+        if dist == 'euclidean':
             pass
-        elif dist == "eucledian_flat":
+        elif dist == "euclidean_flat":
             snapshots = snapshot_flat
 
-        for i in range(T):
-            for j in range(i):  # fill upper triangle only
-                # Eucledian distance
-                dist_mat[j, i] = np.linalg.norm(snapshots[i] - snapshots[j])
+        for j in range(T):
+            for i in range(j):  # fill upper triangle only
+                dist_mat[i, j] = np.linalg.norm(snapshots[i] - snapshots[j])  # Eucledian distance
 
         dist_mat = dist_mat + dist_mat.T
 

@@ -27,7 +27,7 @@ def plot_dendrogram_from_clusters(
         ax=None,
         max_distance=None,
         leaf_rotation=90,
-        leaf_font_size=8,
+        leaf_font_size=6,
         title=""):
 
     if ax is None:
@@ -47,7 +47,7 @@ def plot_dendrogram_from_clusters(
 
     ax.set_title(title, weight="bold")
     ax.set_ylabel("Distance")
-    ax.set_xlabel("Time")
+    ax.set_xlabel("Time points")
 
 
 def plot_scatter_of_phases_from_temporal_network(
@@ -70,7 +70,7 @@ def plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, number_of_co
     ax.set_yticks([])
     sb.despine(ax=ax, left=True)
     ax.grid(axis='x')
-    ax.set_title(title)
+    ax.set_title(title, weight="bold")
 
 
 def plot_time_clusters(times, clusters, ax=None, cmap=plt.cm.tab10):
@@ -98,44 +98,6 @@ def plot_time_clusters(times, clusters, ax=None, cmap=plt.cm.tab10):
         n_clust = len(set(clusters))
         ax.scatter(times, 0 * np.ones(n_t), c=clusters,
                    cmap=cmap, vmin=1, vmax=n_colors)
-
-
-def plot_events(ax=None):
-    if ax == None:
-        ax = plt.gca()
-
-    y_pos = 1.01 * ax.get_ylim()[1]
-
-    events_chen = [33, 84, 36, 100]
-    event_chen_names = ['bud', 'spn', 'ori', 'mass']
-    for i, event in enumerate(events_chen):
-        ax.axvline(x=event, c='k', label=event_chen_names[i], zorder=-1)
-        ax.text(event, y_pos, event_chen_names[i],  # transform=ax.transAxes,
-                fontsize='small', rotation=90, va='bottom', ha='center')
-
-    events = ['START', 'E3']
-    events_times = [5, 70]
-    for i, event in enumerate(events):
-        ax.axvline(x=events_times[i], c='k', ls='--', label=event[i], zorder=-1)
-        ax.text(events_times[i], y_pos, events[i],  # transform=ax.transAxes,
-                fontsize='small', rotation=90, va='bottom', ha='center')
-
-
-def plot_phases(ax=None, y_pos=None):
-    if ax == None:
-        ax = plt.gca()
-    if y_pos == None:
-        y_pos = 1.01 * ax.get_ylim()[1]
-
-    phases = np.array([0, 35, 70, 78, 100])
-    phases_mid = (phases[:-1] + phases[1:]) / 2
-    phases_labels = ['G1', 'S', 'G2', 'M']
-
-    for i in range(len(phases) - 1):
-        ax.axvspan(xmin=phases[i], xmax=phases[i + 1], ymin=0, ymax=0.1, color='k', alpha=+ 0.15 * i)
-
-        ax.text(phases_mid[i], -1, phases_labels[i], fontweight='bold',
-                va='bottom', ha='center')
 
 
 def configure_colour_map():

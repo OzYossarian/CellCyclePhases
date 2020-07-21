@@ -1,9 +1,7 @@
-
-
 from ODEs.xppcall import xpprun
 
 
-class OdeSolutions:
+class ODEsSolutions:
     def __init__(self, filepath, start_time, end_time):
         times_and_solutions, variables = xpprun(filepath, clean_after=True)
         self.times = times_and_solutions[start_time:end_time, 0]

@@ -7,3 +7,6 @@ matplotlib-label-lines
 seaborn
 pathpy
 teneto
+scipy
+sklearn
+scikit-learn

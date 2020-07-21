@@ -39,15 +39,17 @@ def plot_events(events, ax=None, y_pos=None, text_x_offset=0):
         ax.text(text_x_pos, y_pos, name, fontsize='small', rotation=90, va='bottom', ha='center')
 
 
-def plot_phases(phases, ax=None, y_pos=None):
+def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
     if ax is None:
         ax = plt.gca()
+    if y_pos is None:
+        y_pos = 1.01 * ax.get_ylim()[1]
 
     for i, phase in enumerate(phases):
         start_time, end_time, name = phase
         mid_time = (start_time + end_time)/2
         # ToDo - better 'alpha' variable?
-        ax.axvspan(xmin=start_time, xmax=end_time, color='k', alpha=+ 0.15 * i)
+        ax.axvspan(xmin=start_time, xmax=end_time, ymin=ymin, ymax=ymax, color='k', alpha=+ 0.15 * i)
         ax.text(mid_time, y_pos, name, fontweight='bold', va='bottom', ha='center')
 
 

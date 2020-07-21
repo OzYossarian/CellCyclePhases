@@ -505,8 +505,8 @@ def xpprun(filepath, version=8, xppname='xppaut', postfix='_tmp', parameters=Non
     path, filename = os.path.split(filepath)
     name, ext = os.path.splitext(filename)
     wd = os.getcwd()
-    rndid = ''
-    rndid2 = ''
+    rndid = '';
+    rndid2 = '';
     newfilepath = ''
 
     if version < 8:
@@ -541,10 +541,14 @@ def xpprun(filepath, version=8, xppname='xppaut', postfix='_tmp', parameters=Non
             ret = out, vn
 
         except:
+
             ret = None
+
+
 
     else:
         # if xpp version >= 8, run using command line inputs.
+
         # clean inputs into cli compatible format
         inputstr = ''
 
@@ -570,8 +574,10 @@ def xpprun(filepath, version=8, xppname='xppaut', postfix='_tmp', parameters=Non
         outputfilepath = os.path.join(path, outputfile)
 
         try:
-            command = "%s %s -silent -with '%s' -runnow -outfile %s" % (xppname, fullfilename, inputstr, outputfilepath)
-            res = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
+
+            res = subprocess.check_output(
+                "%s %s -silent -with '%s' -runnow -outfile %s" % (xppname, fullfilename, inputstr, outputfilepath),
+                stderr=subprocess.STDOUT, shell=True)
 
             os.chdir(wd)
 
@@ -580,6 +586,8 @@ def xpprun(filepath, version=8, xppname='xppaut', postfix='_tmp', parameters=Non
             vn = search_state_vars_in_srclines(srclines)
 
             ret = out, vn
+
+
 
         except:
             print

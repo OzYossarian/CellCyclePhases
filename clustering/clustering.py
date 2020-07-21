@@ -23,27 +23,27 @@ def compute_snapshot_distances(temporal_network, distance_type='euclidean'):
     """
 
     T = temporal_network.T
-    dist_mat = np.zeros((T, T))
+    distance_matrix = np.zeros((T, T))
 
     snapshots = temporal_network.df_to_array()
     snapshots = np.swapaxes(snapshots, 0, 2)  # put time as zeroth axis
     snapshot_flat = snapshots.reshape(T, -1)  # each matrix is flattened, represented as a vector
 
     if distance_type == 'cosinesim':
-        dist_mat = 1 - cosine_similarity(snapshot_flat, snapshot_flat)
-        np.fill_diagonal(dist_mat, 0)  # otherwise, 1e-15 but negative values, cause problems later
+        distance_matrix = 1 - cosine_similarity(snapshot_flat, snapshot_flat)
+        np.fill_diagonal(distance_matrix, 0)  # otherwise, 1e-15 but negative values, cause problems later
 
     else:
         if distance_type == "euclidean_flat":
             snapshots = snapshot_flat
         for j in range(T):
             for i in range(j):  # fill upper triangle only
-                dist_mat[i, j] = np.linalg.norm(snapshots[i] - snapshots[j])  # Eucledian distance
+                distance_matrix[i, j] = np.linalg.norm(snapshots[i] - snapshots[j])  # Eucledian distance
 
-        dist_mat = dist_mat + dist_mat.T
+        distance_matrix = distance_matrix + distance_matrix.T
 
     # extract condensed distance matrix needed for the clustering
-    id_u = np.triu_indices(n=T, k=1)  # indices of upper triangle elements
-    dist_mat_condensed = dist_mat[id_u]
+    upper_triangular_indices = np.triu_indices(n=T, k=1)  # indices of upper triangle elements
+    distance_matrix_condensed = distance_matrix[upper_triangular_indices]
 
-    return dist_mat, dist_mat_condensed
+    return distance_matrix, distance_matrix_condensed

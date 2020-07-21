@@ -61,7 +61,7 @@ def plot_scatter_of_phases_from_temporal_network(
 
     clusters = clustering.linkage(temporal_network, distance_type, method)
     flat_clusters = sch.fcluster(clusters, max_clusters, criterion='maxclust')
-    times = np.array(list(set(temporal_network.network.t)))
+    times = temporal_network.time_points(starting_at_zero=True)
     plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, ax, number_of_colours, title)
 
 

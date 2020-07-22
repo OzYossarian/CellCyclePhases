@@ -116,31 +116,40 @@ def plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, number_of_co
     ax.set_title(title, weight="bold")
 
 
-def plot_time_clusters(times, clusters, ax=None, cmap=plt.cm.tab10):
-    if ax == None:
+def plot_time_clusters(times, flat_clusters, ax=None):
+    if ax is None:
         ax = plt.gca()
 
-    n_colors = 10
-    n_plots = len(clusters.shape)
-    n_t = len(times)
-
-    if n_plots > 1:
-        for i, clusters_i in enumerate(clusters):
-            n_clust = len(set(clusters_i))
-
-            if n_clust > 10:
-                cmap = plt.cm.tab20
-                n_colors = 20
-            else:
-                cmap = plt.cm.tab10
-                n_colors = 10
-
-            ax.scatter(times, (i + 1) * np.ones(n_t), c=clusters_i,
-                       cmap=cmap, vmin=1, vmax=n_colors)
+    number_of_plots = len(flat_clusters.shape)
+    if number_of_plots > 1:
+        for i in range(len(flat_clusters)):
+            number_of_clusters = len(set(flat_clusters[i]))
+            (cmap, number_of_colors) = (plt.cm.tab20, 20) if number_of_clusters > 10 else (plt.cm.tab10, 10)
+            y = (i + 1) * np.ones(len(times))
+            ax.scatter(times, y, c=flat_clusters[i], cmap=cmap, vmin=1, vmax=number_of_colors)
     else:
-        n_clust = len(set(clusters))
-        ax.scatter(times, 0 * np.ones(n_t), c=clusters,
-                   cmap=cmap, vmin=1, vmax=n_colors)
+        ax.scatter(times, 0 * np.ones(len(times)), c=flat_clusters, cmap=plt.cm.tab10, vmin=1, vmax=10)
+
+    ax.set_ylabel("Max # clusters")
+    ax.set_xlabel("Times (min)")
+
+    ax.set_xticks(range(0, 100 + 5, 10))
+    ax.set_ylim([-1, ax.get_ylim()[1]])
+    ax.grid(axis="x")
+    ax.set_axisbelow(True)
+    sb.despine(ax=ax)
+
+
+def plot_time_clusters_right_axis(max_cluster_range, labels, ax):
+    if ax is None:
+        ax = plt.gca()
+
+    ax_right = ax.twinx()
+    ax_right.set_ylim(ax.get_ylim())
+    ax_right.set_yticks(max_cluster_range)
+
+    ax_right.set_yticklabels(labels)
+    sb.despine(ax=ax_right, right=False)
 
 
 def configure_colour_map():

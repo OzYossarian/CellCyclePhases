@@ -4,25 +4,31 @@ import matplotlib as mpl
 import scipy.cluster.hierarchy as sch
 
 
-def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, ylabel, fig, axs):
+def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, ylabel, fig, axes):
     if rows > 1:
-        axs_left = axs[:, 0]
+        axes_left = axes[:, 0]
     else:
-        axs_left = [axs[0]]
-
-    for ax in axs_left:
+        axes_left = [axes[0]]
+    for ax in axes_left:
         ax.set_ylabel(ylabel)
 
-    for ax in axs.flatten()[-columns:]:
-        ax.set_xlabel(xlabel)
+    size_of_extra_row = total_subplots % columns
 
-    # size_of_extra_row = total_subplots % columns
-    # if size_of_extra_row != 0 and rows > 1:
-    #     blank_axs = axs[-1, (size_of_extra_row + 1):]
-    #     above_blank_axs = axs[-2, (size_of_extra_row + 1):]
-    #     for labels in above_blank_axs.get_xaxis().get_majorticklabels():
-    #         labels.set_visible(True)
-    #     fig.delaxes(blank_axs)
+    if size_of_extra_row != 0 and rows > 1:
+        blank_axes = axes[-1, size_of_extra_row:]
+        above_blank_axes = axes[-2, size_of_extra_row:]
+        axes_on_extra_row = axes[-1, :size_of_extra_row]
+        for ax in blank_axes:
+            fig.delaxes(ax)
+        for ax in above_blank_axes:
+            ax.xaxis.set_tick_params(labelbottom=True)
+            ax.set_xlabel(xlabel)
+        for ax in axes_on_extra_row:
+            ax.set_xlabel(xlabel)
+
+    else:
+        for ax in axes.flatten()[-columns:]:
+            ax.set_xlabel(xlabel)
 
 
 def configure_colour_map():

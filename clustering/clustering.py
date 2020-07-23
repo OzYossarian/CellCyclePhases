@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-import matplotlib as mpl
 import scipy.cluster.hierarchy as sch
 import seaborn as sb
 
@@ -150,8 +149,3 @@ def plot_time_clusters_right_axis(max_cluster_range, labels, ax):
 
     ax_right.set_yticklabels(labels)
     sb.despine(ax=ax_right, right=False)
-
-
-def configure_colour_map():
-    cmap = cm.tab10(np.linspace(0, 1, 10))
-    sch.set_link_color_palette([mpl.colors.rgb2hex(rgb[:3]) for rgb in cmap])

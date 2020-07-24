@@ -23,13 +23,16 @@ def plot_silhouette_samples(silhouettes, columns):
         np.unique(silhouettes.numbers_of_clusters, return_index=True)
 
     # Omit the 1-cluster
-    total_subplots = len(unique_numbers_of_clusters) - 1
+    one_cluster_index = np.where(unique_numbers_of_clusters == 1)
+    unique_numbers_of_clusters = np.delete(unique_numbers_of_clusters, one_cluster_index)
+    indices_of_unique_numbers_of_clusters = np.delete(indices_of_unique_numbers_of_clusters, one_cluster_index)
+    total_subplots = len(unique_numbers_of_clusters)
 
     rows = (total_subplots // columns) + (0 if total_subplots % columns == 0 else 1)
     fig, axs = plt.subplots(nrows=rows, ncols=columns, sharex=True, sharey=True, figsize=(10, 2 * rows))
 
     for i, unique_j in enumerate(indices_of_unique_numbers_of_clusters):
-        ax = axs.flatten()[i - 1]
+        ax = axs.flatten()[i]
         silhouette = silhouettes[unique_j]
         title = f"{int(silhouette.number_of_clusters)} clusters"
         plot_silhouette_sample(silhouette, ax=ax, title=title)
@@ -50,21 +53,20 @@ def plot_silhouette_sample(silhouette, ax=None, title=''):
         sb.set_palette("tab10")
 
     y_lower = 1
-    for i in range(1, int(silhouette.number_of_clusters) + 1):
-        # Aggregate the silhouette scores for samples belonging to cluster i, and sort them
+    for i, cluster in enumerate(np.unique(silhouette.clusters)):
+        # Aggregate the silhouette scores for samples belonging to each cluster, and sort them
         # ToDo: calculate values upon creation of Silhouette(s)? Then store them as silhouette(s).values?
-        silhouette_values = silhouette.sample[silhouette.clusters == i]
+        silhouette_values = silhouette.sample[silhouette.clusters == cluster]
         silhouette_values.sort()
 
         cluster_size = silhouette_values.shape[0]
         y_upper = y_lower + cluster_size
         y = np.arange(y_lower, y_upper)
-        ax.fill_betweenx(y, 0, silhouette_values, facecolor=f"C{i - 1}", edgecolor=f"C{i - 1}", alpha=1)
+        ax.fill_betweenx(y, 0, silhouette_values, facecolor=f"C{i}", edgecolor=f"C{i}", alpha=1)
 
         # Compute the new y_lower for next plot
-        # ToDo - figure out what hpad does and give it a more descriptive name.
-        hpad = 1
-        y_lower = y_upper + hpad  # 10 for the 0 samples
+        vertical_padding = 1
+        y_lower = y_upper + vertical_padding
 
     ax.set_title(title)
     ax.axvline(x=silhouette.average, c='k', ls='--')

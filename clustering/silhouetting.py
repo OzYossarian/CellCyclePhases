@@ -2,6 +2,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 import drawing
+from clustering import clustering
+
+
+def plot_average_silhouettes_and_clusters(silhouettes, max_cluster_range, times, title):
+    gridspec_kw = {"width_ratios": [9, 2]}
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7, 3), gridspec_kw=gridspec_kw)
+
+    numbers_of_clusters_differences = np.diff(silhouettes.numbers_of_clusters)
+    labels = [
+        int(number_of_clusters) if (i == 0 or numbers_of_clusters_differences[i - 1] != 0) else ''
+        for i, number_of_clusters
+        in enumerate(silhouettes.numbers_of_clusters)]
+
+    clustering.plot_time_clusters(times, silhouettes.clusters, ax=ax1)
+    clustering.plot_time_clusters_right_axis(max_cluster_range, labels, ax=ax1)
+    plot_average_silhouettes(silhouettes, max_cluster_range, labels, ylim=ax1.get_ylim(), ax=ax2)
+
+    fig.suptitle(title)
+    plt.subplots_adjust(wspace=0.4, top=0.8)
+
+    return fig, (ax1, ax2)
 
 
 def plot_average_silhouettes(silhouettes, max_clusters_range, labels, ylim, ax=None):

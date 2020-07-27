@@ -47,25 +47,10 @@ def compute_snapshot_distances(temporal_network, distance_type='euclidean'):
     return distance_matrix, distance_matrix_condensed
 
 
-def plot_dendrogram_from_temporal_network(
-        temporal_network,
-        distance_type,
-        method,
-        ax=None,
-        max_distance=None,
-        leaf_rotation=90,
-        leaf_font_size=8,
-        title=""):
-
-    _, distance_matrix_condensed = compute_snapshot_distances(temporal_network, distance_type)
-    clusters = sch.linkage(distance_matrix_condensed, method=method)
-    plot_dendrogram_from_clusters(clusters, ax, max_distance, leaf_rotation, leaf_font_size, title)
-
-
 def plot_dendrogram_from_clusters(
         clusters,
+        number_of_clusters,
         ax=None,
-        max_distance=None,
         leaf_rotation=90,
         leaf_font_size=6,
         title=""):
@@ -73,38 +58,19 @@ def plot_dendrogram_from_clusters(
     if ax is None:
         ax = plt.gca()
 
+    distance_threshold = get_distance_threshold(clusters, number_of_clusters)
     sch.dendrogram(
         clusters,
         leaf_rotation=leaf_rotation,
         leaf_font_size=leaf_font_size,
-        color_threshold=max_distance,
+        color_threshold=distance_threshold,
         above_threshold_color='black',
         ax=ax)
 
-    if max_distance is not None:
-        # Add dotted horizontal line at max distance
-        ax.axhline(y=max_distance, c='grey', ls='--', zorder=1)
-
+    ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
     ax.set_title(title, weight="bold")
     ax.set_ylabel("Distance")
     ax.set_xlabel("Time points")
-
-
-def plot_scatter_of_phases_from_temporal_network(
-        temporal_network,
-        distance_type,
-        method,
-        max_clusters,
-        number_of_colours,
-        ax=None,
-        title=""):
-
-    _, distance_matrix_condensed = compute_snapshot_distances(temporal_network, distance_type)
-    clusters = sch.linkage(distance_matrix_condensed, method=method)
-    flat_clusters = sch.fcluster(clusters, max_clusters, criterion='maxclust')
-
-    times = temporal_network.time_points(starting_at_zero=True)
-    plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, ax, number_of_colours, title)
 
 
 def plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, number_of_colours, ax=None, title=""):
@@ -113,6 +79,16 @@ def plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, number_of_co
     sb.despine(ax=ax, left=True)
     ax.grid(axis='x')
     ax.set_title(title, weight="bold")
+
+
+def get_distance_threshold(clusters, number_of_clusters):
+    number_of_observations = clusters.shape[0] + 1
+    if number_of_clusters >= number_of_observations:
+        return 0
+    elif number_of_clusters <= 1:
+        return clusters[-1, 2] * 1.001
+    else:
+        return clusters[-number_of_clusters, 2] * 1.001
 
 
 def plot_time_clusters(times, flat_clusters, ax=None):

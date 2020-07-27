@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
+from labellines import labelLines
 
 
-def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False):
+def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False, labels_xvals=None):
     if ax is None:
         ax = plt.gca()
 
@@ -20,6 +21,12 @@ def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False):
         ax.set_ylabel('Concentration')
 
     sb.despine()
+
+    if labels_xvals is None:
+        # Add evenly-spaced labels
+        labels_interval = len(times) // (len(variables) + 1)
+        labels_xvals = [times[labels_interval * (i+1)] for i in range(len(variables))]
+    labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
 
     return ax
 

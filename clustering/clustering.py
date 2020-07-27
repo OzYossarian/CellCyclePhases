@@ -4,57 +4,8 @@ import matplotlib.cm as cm
 import scipy.cluster.hierarchy as sch
 import seaborn as sb
 
-from sklearn.metrics.pairwise import cosine_similarity
 
-
-def compute_snapshot_distances(temporal_network, distance_type='euclidean'):
-    """
-    Compute pairwise distance between snapshots
-
-    parameters
-    ----------
-    - dist : string ('cosinesim', 'euclidean', 'euclidean_flat')
-
-    returns
-    -------
-
-    """
-
-    T = temporal_network.T
-    distance_matrix = np.zeros((T, T))
-
-    snapshots = temporal_network.df_to_array()
-    snapshots = np.swapaxes(snapshots, 0, 2)  # put time as zeroth axis
-    snapshot_flat = snapshots.reshape(T, -1)  # each matrix is flattened, represented as a vector
-
-    if distance_type == 'cosinesim':
-        distance_matrix = 1 - cosine_similarity(snapshot_flat, snapshot_flat)
-        np.fill_diagonal(distance_matrix, 0)  # otherwise, 1e-15 but negative values, cause problems later
-
-    else:
-        if distance_type == "euclidean_flat":
-            snapshots = snapshot_flat
-        for j in range(T):
-            for i in range(j):  # fill upper triangle only
-                distance_matrix[i, j] = np.linalg.norm(snapshots[i] - snapshots[j])  # Eucledian distance
-
-        distance_matrix = distance_matrix + distance_matrix.T
-
-    # Transform into condensed distance matrix needed for the clustering
-    upper_triangular_indices = np.triu_indices(n=T, k=1)
-    distance_matrix_condensed = distance_matrix[upper_triangular_indices]
-
-    return distance_matrix, distance_matrix_condensed
-
-
-def plot_dendrogram_from_clusters(
-        clusters,
-        number_of_clusters,
-        ax=None,
-        leaf_rotation=90,
-        leaf_font_size=6,
-        title=""):
-
+def plot_dendrogram_from_clusters(clusters, number_of_clusters, ax=None, leaf_rotation=90, leaf_font_size=6, title=''):
     if ax is None:
         ax = plt.gca()
 
@@ -73,7 +24,7 @@ def plot_dendrogram_from_clusters(
     ax.set_xlabel("Time points")
 
 
-def plot_scatter_of_phases_from_flat_clusters(flat_clusters, times, number_of_colours, ax=None, title=""):
+def plot_scatter_of_clusters(flat_clusters, times, ax=None, title="", number_of_colours=10):
     ax.scatter(times, times * 0, c=flat_clusters, cmap=cm.tab10, vmin=1, vmax=number_of_colours)
     ax.set_yticks([])
     sb.despine(ax=ax, left=True)
@@ -95,8 +46,8 @@ def plot_time_clusters(times, flat_clusters, ax=None):
     if ax is None:
         ax = plt.gca()
 
-    number_of_plots = len(flat_clusters.shape)
-    if number_of_plots > 1:
+    more_than_one_plot = len(flat_clusters.shape) > 1
+    if more_than_one_plot:
         for i in range(len(flat_clusters)):
             number_of_clusters = len(set(flat_clusters[i]))
             (cmap, number_of_colors) = (plt.cm.tab20, 20) if number_of_clusters > 10 else (plt.cm.tab10, 10)

@@ -16,7 +16,7 @@ def plot_average_silhouettes_and_clusters(silhouettes, max_cluster_range, times,
         in enumerate(silhouettes.numbers_of_clusters)]
 
     clustering.plot_time_clusters(times, silhouettes.clusters, ax=ax1)
-    clustering.plot_time_clusters_right_axis(max_cluster_range, labels, ax=ax1)
+    clustering.plot_time_clusters_right_axis(silhouettes.numbers_of_clusters, labels, ax=ax1)
     plot_average_silhouettes(silhouettes, max_cluster_range, labels, ylim=ax1.get_ylim(), ax=ax2)
 
     fig.suptitle(title)
@@ -35,7 +35,7 @@ def plot_average_silhouettes(silhouettes, max_clusters_range, labels, ylim, ax=N
     ax.set_xlabel("Average silhouette")
     ax.set_xlim(xmax=1.1)
     ax.set_ylim(ylim)
-    ax.set_yticks(max_clusters_range)
+    ax.set_yticks(silhouettes.numbers_of_clusters)
     ax.set_yticklabels(labels)
 
 

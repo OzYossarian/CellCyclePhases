@@ -4,12 +4,14 @@ import matplotlib.cm as cm
 import scipy.cluster.hierarchy as sch
 import seaborn as sb
 
+from drawing.utils import display_name
 
-def plot_dendrogram_from_clusters(linkage, cluster_set_size, ax=None, leaf_rotation=90, leaf_font_size=6, title=''):
+
+def plot_dendrogram_from_clusters(linkage, cluster_set, ax=None, leaf_rotation=90, leaf_font_size=6, title=''):
     if ax is None:
         ax = plt.gca()
 
-    distance_threshold = get_distance_threshold(linkage, cluster_set_size)
+    distance_threshold = get_distance_threshold(linkage, cluster_set.size)
     sch.dendrogram(
         linkage,
         leaf_rotation=leaf_rotation,
@@ -20,7 +22,7 @@ def plot_dendrogram_from_clusters(linkage, cluster_set_size, ax=None, leaf_rotat
 
     ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
     ax.set_title(title, weight="bold")
-    ax.set_ylabel("Distance")
+    ax.set_ylabel(display_name(cluster_set.limit_type))
     ax.set_xlabel("Time points")
 
 

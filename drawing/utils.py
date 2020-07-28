@@ -4,6 +4,13 @@ import matplotlib as mpl
 import scipy.cluster.hierarchy as sch
 
 
+# Think twice before accessing directly; the method display_name can be used instead.
+_display_names = {
+    'maxclust': 'Max # clusters',
+    'distance': 'Distance threshold'
+}
+
+
 def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, ylabel, fig, axes):
     if rows > 1:
         axes_left = axes[:, 0]
@@ -29,6 +36,10 @@ def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, y
     else:
         for ax in axes.flatten()[-columns:]:
             ax.set_xlabel(xlabel)
+
+
+def display_name(key):
+    return _display_names[key] if key in _display_names else key
 
 
 def configure_colour_map():

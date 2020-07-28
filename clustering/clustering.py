@@ -24,14 +24,6 @@ def plot_dendrogram_from_clusters(linkage, cluster_set_size, ax=None, leaf_rotat
     ax.set_xlabel("Time points")
 
 
-def plot_scatter_of_clusters(clusters, times, ax=None, title="", number_of_colours=10):
-    ax.scatter(times, times * 0, c=clusters, cmap=cm.tab10, vmin=1, vmax=number_of_colours)
-    ax.set_yticks([])
-    sb.despine(ax=ax, left=True)
-    ax.grid(axis='x')
-    ax.set_title(title, weight="bold")
-
-
 def get_distance_threshold(linkage, cluster_set_size):
     number_of_observations = linkage.shape[0] + 1
     if cluster_set_size >= number_of_observations:
@@ -42,31 +34,39 @@ def get_distance_threshold(linkage, cluster_set_size):
         return linkage[-cluster_set_size, 2] * 1.001
 
 
-def plot_range_of_clusters(times, clusters, clusters_limits, ax=None):
+# ToDo - make plot_cluster_sets call this method
+def plot_cluster_set(clusters, times, ax=None, title="", number_of_colours=10):
+    ax.scatter(times, times * 0, c=clusters, cmap=cm.tab10, vmin=1, vmax=number_of_colours)
+    ax.set_yticks([])
+    sb.despine(ax=ax, left=True)
+    ax.grid(axis='x')
+    ax.set_title(title, weight="bold")
+
+
+def plot_cluster_sets(times, cluster_sets, ax=None):
     if ax is None:
         ax = plt.gca()
 
-    if len(clusters.shape) <= 1:
-        clusters = [clusters]
-    for i in range(len(clusters)):
-        number_of_clusters = len(set(clusters[i]))
-        (cmap, number_of_colors) = (plt.cm.tab20, 20) if number_of_clusters > 10 else (plt.cm.tab10, 10)
-        y = clusters_limits[i] * np.ones(len(times))
-        ax.scatter(times, y, c=clusters[i], cmap=cmap, vmin=1, vmax=number_of_colors)
+    for cluster_set in cluster_sets:
+        (cmap, number_of_colors) = (plt.cm.tab20, 20) if cluster_set.size > 10 else (plt.cm.tab10, 10)
+        y = cluster_set.limit * np.ones(len(times))
+        ax.scatter(times, y, c=cluster_set.clusters, cmap=cmap, vmin=1, vmax=number_of_colors)
 
-    ax.set_ylim([-1, ax.get_ylim()[1]])
+    # Leave some space at the bottom in which to plot phases later
+    limits_size = (cluster_sets.limits[-1] - cluster_sets.limits[0])
+    ylim_bottom = cluster_sets.limits[0] - limits_size / 4
+    ylim_top = cluster_sets.limits[-1] + limits_size / 12
+    ax.set_ylim([ylim_bottom, ylim_top])
+
+    ax.set_xlabel("Times (min)")
     ax.grid(axis="x")
     ax.set_axisbelow(True)
     sb.despine(ax=ax)
 
 
-def plot_time_clusters_right_axis(cluster_set_sizes, labels, ax):
+def plot_cluster_sets_sizes(cluster_sets, ax):
     if ax is None:
         ax = plt.gca()
 
-    ax_right = ax.twinx()
-    ax_right.set_ylim(ax.get_ylim())
-    ax_right.set_yticks(cluster_set_sizes)
-
-    ax_right.set_yticklabels(labels)
-    sb.despine(ax=ax_right, right=False)
+    ax.plot(cluster_sets.sizes, cluster_sets.limits, 'ko-')
+    ax.set_xlabel("Actual # clusters")

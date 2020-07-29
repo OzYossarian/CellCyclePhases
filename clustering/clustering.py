@@ -1,48 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import scipy.cluster.hierarchy as sch
 import seaborn as sb
-
-from drawing.utils import display_name
-
-
-def plot_dendrogram_from_clusters(linkage, cluster_set, ax=None, leaf_rotation=90, leaf_font_size=6, title=''):
-    if ax is None:
-        ax = plt.gca()
-
-    distance_threshold = get_distance_threshold(linkage, cluster_set.size)
-    sch.dendrogram(
-        linkage,
-        leaf_rotation=leaf_rotation,
-        leaf_font_size=leaf_font_size,
-        color_threshold=distance_threshold,
-        above_threshold_color='black',
-        ax=ax)
-
-    ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
-    ax.set_title(title, weight="bold")
-    ax.set_ylabel(display_name(cluster_set.limit_type))
-    ax.set_xlabel("Time points")
-
-
-def get_distance_threshold(linkage, cluster_set_size):
-    number_of_observations = linkage.shape[0] + 1
-    if cluster_set_size >= number_of_observations:
-        return 0
-    elif cluster_set_size <= 1:
-        return linkage[-1, 2] * 1.001
-    else:
-        return linkage[-cluster_set_size, 2] * 1.001
-
-
-# ToDo - make plot_cluster_sets call this method
-def plot_cluster_set(clusters, times, ax=None, title="", number_of_colours=10):
-    ax.scatter(times, times * 0, c=clusters, cmap=cm.tab10, vmin=1, vmax=number_of_colours)
-    ax.set_yticks([])
-    sb.despine(ax=ax, left=True)
-    ax.grid(axis='x')
-    ax.set_title(title, weight="bold")
 
 
 def plot_cluster_sets(times, cluster_sets, ax=None):

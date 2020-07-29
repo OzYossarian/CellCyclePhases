@@ -4,6 +4,7 @@ import seaborn as sb
 from labellines import labelLines
 
 
+# ToDo: move into ODESolutions class
 def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False, labels_xvals=None):
     if ax is None:
         ax = plt.gca()
@@ -14,7 +15,7 @@ def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False, la
         else:
             ax.plot(times, ode_solutions.series(variable), label=variable)
 
-    ax.set_xlabel('Time (min)')
+    ax.set_xlabel('Time')
     if norm:
         ax.set_ylabel('Concentration (normed)')
     else:
@@ -22,7 +23,7 @@ def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False, la
 
     sb.despine()
 
-    if labels_xvals is None:
+    if not labels_xvals:
         # Add evenly-spaced labels
         labels_interval = len(times) // (len(variables) + 1)
         labels_xvals = [times[labels_interval * (i+1)] for i in range(len(variables))]

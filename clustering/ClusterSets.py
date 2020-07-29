@@ -81,6 +81,13 @@ class ClusterSets(Sequence):
         ax.plot(self.sizes, self.limits, 'ko-')
         ax.set_xlabel("Actual # clusters")
 
+    def plot_silhouette_samples(self, axs):
+        for i, cluster_set in enumerate(self._cluster_sets):
+            ax = axs.flatten()[i]
+            title = f'{display_name(cluster_set.limit_type)} = {cluster_set.limit}'
+            subtitle = f'({int(cluster_set.size)} clusters)'
+            cluster_set.plot_silhouette_samples(ax=ax, title=f'{title}\n{subtitle}')
+
 
 class ClusterSet:
     def __init__(self, clusters, cluster_data, cluster_limit_type, cluster_limit, silhouette):
@@ -113,6 +120,35 @@ class ClusterSet:
         ax.set_title(title, weight="bold")
         ax.set_ylabel(display_name(self.limit_type))
         ax.set_xlabel("Time points")
+
+    def plot_silhouette_samples(self, ax=None, title=''):
+        if ax is None:
+            ax = plt.gca()
+
+        if self.size > 10:
+            sb.set_palette("tab20")
+        else:
+            sb.set_palette("tab10")
+
+        y_lower = 1
+        for i, cluster in enumerate(np.unique(self.clusters)):
+            # Aggregate the silhouette scores for samples belonging to each cluster, and sort them
+            if self.silhouette.samples.size > 0:
+                silhouette_values = self.silhouette.samples[self.clusters == cluster]
+                silhouette_values.sort()
+
+                silhouette_size = silhouette_values.shape[0]
+                y_upper = y_lower + silhouette_size
+                y = np.arange(y_lower, y_upper)
+                ax.fill_betweenx(y, 0, silhouette_values, facecolor=f"C{i}", edgecolor=f"C{i}", alpha=1)
+
+                # Compute the new y_lower for next plot
+                vertical_padding = 1
+                y_lower = y_upper + vertical_padding
+
+        ax.set_title(title)
+        ax.axvline(x=self.silhouette.average, c='k', ls='--')
+        sb.despine()
 
     def distance_threshold(self):
         number_of_observations = self.global_data.linkage.shape[0] + 1

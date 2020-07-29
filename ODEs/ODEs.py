@@ -1,35 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sb
-from labellines import labelLines
-
-
-# ToDo: move into ODESolutions class
-def plot_concentrations(ode_solutions, variables, times, ax=None, norm=False, labels_xvals=None):
-    if ax is None:
-        ax = plt.gca()
-
-    for variable in variables:
-        if norm:
-            ax.plot(times, normed(ode_solutions.series(variable)), label=variable)
-        else:
-            ax.plot(times, ode_solutions.series(variable), label=variable)
-
-    ax.set_xlabel('Time')
-    if norm:
-        ax.set_ylabel('Concentration (normed)')
-    else:
-        ax.set_ylabel('Concentration')
-
-    sb.despine()
-
-    if not labels_xvals:
-        # Add evenly-spaced labels
-        labels_interval = len(times) // (len(variables) + 1)
-        labels_xvals = [times[labels_interval * (i+1)] for i in range(len(variables))]
-    labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
-
-    return ax
 
 
 def plot_events(events, ax=None, y_pos=None, text_x_offset=0):

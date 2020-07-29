@@ -4,13 +4,14 @@ from sklearn.metrics import pairwise_distances
 
 
 class ClusterData:
-    def __init__(self, flat_snapshots, linkage, distance_matrix, distance_matrix_condensed, method, metric):
+    def __init__(self, flat_snapshots, linkage, distance_matrix, distance_matrix_condensed, method, metric, times):
         self.flat_snapshots = flat_snapshots
         self.linkage = linkage
         self.distance_matrix = distance_matrix
         self.distance_matrix_condensed = distance_matrix_condensed
         self.method = method
         self.metric = metric
+        self.times = times
 
     @classmethod
     def from_temporal_network(_class, temporal_network, method, metric):
@@ -19,6 +20,7 @@ class ClusterData:
         snapshots = temporal_network.df_to_array()
         # Put time as zeroth axis and flatten each matrix to a vector
         snapshots = np.swapaxes(snapshots, 0, 2)
+        times = range(snapshots.shape[0])
         flat_snapshots = snapshots.reshape(temporal_network.T, -1)
 
         if method != 'k_means':
@@ -27,4 +29,4 @@ class ClusterData:
             distance_matrix_condensed = distance_matrix[upper_triangular_indices]
             linkage = sch.linkage(distance_matrix_condensed, method=method)
 
-        return _class(flat_snapshots, linkage, distance_matrix, distance_matrix_condensed, method, metric)
+        return _class(flat_snapshots, linkage, distance_matrix, distance_matrix_condensed, method, metric, times)

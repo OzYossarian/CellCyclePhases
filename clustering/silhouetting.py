@@ -2,35 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 import drawing
-from clustering import clustering
 from drawing.utils import display_name
-
-
-def plot_average_silhouettes_and_clusters(cluster_sets, times, title):
-    gridspec_kw = {"width_ratios": [3, 1, 2]}
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(9, 3), gridspec_kw=gridspec_kw, sharey=True)
-
-    clustering.plot_cluster_sets(times, cluster_sets, ax=ax1)
-    plot_average_silhouettes(cluster_sets, ax=ax2)
-    clustering.plot_cluster_sets_sizes(cluster_sets, ax=ax3)
-
-    ax2.yaxis.set_tick_params(labelleft=True)
-    ax3.yaxis.set_tick_params(labelleft=True)
-
-    ax1.set_ylabel(display_name(cluster_sets.limit_type))
-    fig.suptitle(title)
-    plt.subplots_adjust(wspace=0.4, top=0.8)
-
-    return fig, (ax1, ax2, ax3)
-
-
-def plot_average_silhouettes(cluster_sets, ax=None):
-    if ax is None:
-        ax = plt.gca()
-
-    ax.plot(cluster_sets.silhouettes.averages, cluster_sets.limits, 'ko-')
-    ax.set_xlabel("Average silhouette")
-    ax.set_xlim((-0.1, 1.1))
 
 
 def plot_silhouettes_samples(cluster_sets, columns):

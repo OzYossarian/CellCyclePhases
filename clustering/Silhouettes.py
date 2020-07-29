@@ -1,7 +1,6 @@
 import numpy as np
 
 from collections import Sequence
-from sklearn import metrics
 
 
 class Silhouettes(Sequence):
@@ -24,15 +23,3 @@ class Silhouettes(Sequence):
 
     def __len__(self):
         return len(self._silhouettes)
-
-
-class Silhouette:
-    def __init__(self, distance_data, clusters, metric):
-        try:
-            self.average = metrics.silhouette_score(distance_data, clusters, metric=metric)
-            self.samples = metrics.silhouette_samples(distance_data, clusters, metric=metric)
-        except ValueError as error:
-            # Often the number of clusters is 1, which sklearn does not like.
-            print(f'WARNING: unable to compute silhouette for cluster set. Error is: {error}')
-            self.average = 0
-            self.samples = np.array([])

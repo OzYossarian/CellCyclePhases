@@ -7,9 +7,9 @@ from clustering.Silhouettes import Silhouettes
 
 
 class ClusterSets(Sequence):
-    def __init__(self, cluster_sets, cluster_data, limit_type):
+    def __init__(self, cluster_sets, snapshots, limit_type):
         self._cluster_sets = cluster_sets
-        self.global_data = cluster_data
+        self.snapshots = snapshots
         self.clusters = np.array([cluster_set.clusters for cluster_set in cluster_sets])
         self.sizes = np.array([cluster_set.size for cluster_set in cluster_sets])
         self.limit_type = limit_type
@@ -19,12 +19,11 @@ class ClusterSets(Sequence):
     def __getitem__(self, key):
         if isinstance(key, slice):
             # Create a 'blank' ClusterSets...
-            cluster_sets = ClusterSets([], self.global_data, self.limit_type)
+            cluster_sets = ClusterSets([], self.snapshots, self.limit_type)
             # ...and populate its fields with slices from this ClusterSets
             cluster_sets._cluster_sets = self._cluster_sets[key]
             cluster_sets.clusters = self.clusters[key]
             cluster_sets.sizes = self.sizes[key]
-            cluster_sets.limit_type = self.limit_type
             cluster_sets.limits = self.limits[key]
             cluster_sets.silhouettes = self.silhouettes[key]
             return cluster_sets

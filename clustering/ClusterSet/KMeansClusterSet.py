@@ -5,9 +5,9 @@ from clustering.Silhouette import Silhouette
 
 
 class KMeansClusterSet(ClusterSet):
-    def __init__(self, cluster_data, cluster_limit_type, cluster_limit):
+    def __init__(self, snapshots, cluster_limit_type, cluster_limit):
         assert cluster_limit_type == 'maxclust'
         k_means = KMeans(n_clusters=cluster_limit, random_state=None)
-        clusters = k_means.fit_predict(cluster_data.flat_snapshots) + 1
-        silhouette = Silhouette(cluster_data.flat_snapshots, clusters, cluster_data.metric)
-        super().__init__(clusters, cluster_data, cluster_limit_type, cluster_limit, silhouette)
+        clusters = k_means.fit_predict(snapshots.flat) + 1
+        silhouette = Silhouette(snapshots.flat, clusters, snapshots.metric)
+        super().__init__(clusters, snapshots, cluster_limit_type, cluster_limit, silhouette)

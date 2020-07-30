@@ -3,9 +3,9 @@ import scipy.cluster.hierarchy as sch
 from sklearn.metrics import pairwise_distances
 
 
-class ClusterData:
+class Snapshots:
     def __init__(self, flat_snapshots, linkage, distance_matrix, distance_matrix_condensed, method, metric, times):
-        self.flat_snapshots = flat_snapshots
+        self.flat = flat_snapshots
         self.linkage = linkage
         self.distance_matrix = distance_matrix
         self.distance_matrix_condensed = distance_matrix_condensed

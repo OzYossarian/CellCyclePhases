@@ -8,16 +8,16 @@ from drawing.utils import display_name
 
 
 class ClusterSet:
-    def __init__(self, clusters, cluster_data, cluster_limit_type, cluster_limit, silhouette):
+    def __init__(self, clusters, snapshots, cluster_limit_type, cluster_limit, silhouette):
         self.clusters = clusters
-        self.global_data = cluster_data  # ToDo: better name than 'global data'?
+        self.snapshots = snapshots
         self.size = len(set(clusters))
         self.limit_type = cluster_limit_type
         self.limit = cluster_limit
         self.silhouette = silhouette
 
     def plot(self, ax=None, y_height=0, cmap=cm.tab10, number_of_colors=10):
-        times = self.global_data.times
+        times = self.snapshots.times
         y = np.ones(len(times)) * y_height
         ax.scatter(times, y, c=self.clusters, cmap=cmap, vmin=1, vmax=number_of_colors)
 
@@ -27,7 +27,7 @@ class ClusterSet:
 
         distance_threshold = self.distance_threshold()
         sch.dendrogram(
-            self.global_data.linkage,
+            self.snapshots.linkage,
             leaf_rotation=leaf_rotation,
             leaf_font_size=leaf_font_size,
             color_threshold=distance_threshold,
@@ -69,10 +69,10 @@ class ClusterSet:
         sb.despine()
 
     def distance_threshold(self):
-        number_of_observations = self.global_data.linkage.shape[0] + 1
+        number_of_observations = self.snapshots.linkage.shape[0] + 1
         if self.size >= number_of_observations:
             return 0
         elif self.size <= 1:
-            return self.global_data.linkage[-1, 2] * 1.001
+            return self.snapshots.linkage[-1, 2] * 1.001
         else:
-            return self.global_data.linkage[-self.size, 2] * 1.001
+            return self.snapshots.linkage[-self.size, 2] * 1.001

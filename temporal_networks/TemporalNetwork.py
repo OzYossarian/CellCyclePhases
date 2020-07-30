@@ -10,12 +10,22 @@ class TemporalNetwork:
         self.node_ids_to_names = node_ids_to_names
 
         # Keep track of the 'true' times, even though we've shifted to start at 0
-        self.times = np.array(sorted(set(self.teneto_network.network['t'])))
+        if teneto_network.sparse:
+            self.times = np.array(sorted(set(self.teneto_network.network['t'])))
+        else:
+            self.times = np.array(range(teneto_network.T))
         self.true_times = self.times + time_shift
 
-        # Expose relevant properties/methods of underlying teneto network - add more as needed
+        # Expose relevant methods of underlying teneto network - add more as needed
         self.T = self.teneto_network.T
-        self.df_to_array = self.teneto_network.df_to_array
+
+    def get_snapshots(self):
+        array = self.teneto_network.df_to_array() if self.sparse() else self.teneto_network.network
+        snapshots = np.swapaxes(array, 0, 2)
+        return snapshots
+
+    def sparse(self):
+        return self.teneto_network.sparse
 
     def node_name(self, id):
         if self.node_ids_to_names is None:

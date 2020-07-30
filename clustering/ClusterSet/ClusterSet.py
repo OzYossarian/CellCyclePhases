@@ -36,7 +36,7 @@ class ClusterSet:
 
         ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
         ax.set_title(title, weight="bold")
-        ax.set_ylabel(display_name(self.limit_type))
+        ax.set_ylabel('Distance threshold')
         ax.set_xlabel("Time points")
 
     def plot_silhouette_samples(self, ax=None, title=''):

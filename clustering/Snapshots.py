@@ -17,9 +17,7 @@ class Snapshots:
     def from_temporal_network(_class, temporal_network, method, metric):
         linkage, distance_matrix, distance_matrix_condensed = (None, None, None)
 
-        snapshots = temporal_network.df_to_array()
-        # Put time as zeroth axis and flatten each matrix to a vector
-        snapshots = np.swapaxes(snapshots, 0, 2)
+        snapshots = temporal_network.get_snapshots()
         times = range(snapshots.shape[0])
         flat_snapshots = snapshots.reshape(temporal_network.T, -1)
 

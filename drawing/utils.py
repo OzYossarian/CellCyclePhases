@@ -1,6 +1,7 @@
 import numpy as np
-import matplotlib.cm as cm
 import matplotlib as mpl
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
 import scipy.cluster.hierarchy as sch
 
 
@@ -45,3 +46,10 @@ def display_name(key):
 def configure_color_map():
     cmap = cm.tab10(np.linspace(0, 1, 10))
     sch.set_link_color_palette([mpl.colors.rgb2hex(rgb[:3]) for rgb in cmap])
+
+
+def increase_limits(top, bottom, increase_top, increase_bottom):
+    difference = top - bottom
+    new_bottom = bottom - (difference * increase_bottom)
+    new_top = top + (difference * increase_top)
+    return [new_bottom, new_top]

@@ -14,8 +14,9 @@ class ODEsSolutions:
     def __init__(self, filepath, start_time=None, end_time=None):
         # If given, start time should be inclusive and end_time should be exclusive.
         times_and_solutions, variables = xpprun(filepath, clean_after=True)
-        self.true_times = times_and_solutions[start_time:end_time, 0]
+
         # Since our temporal network has had times shifted to start at zero, do the same here.
+        self.true_times = times_and_solutions[start_time:end_time, 0]
         self.times = self.true_times if not start_time else self.true_times - start_time
         self.solutions = times_and_solutions[start_time:end_time, 1:]
         self.variables = variables
@@ -39,18 +40,8 @@ class ODEsSolutions:
             ax = plt.gca()
 
         for variable in variables:
-            if norm:
-                ax.plot(self.times, normed(self.series(variable)), label=variable)
-            else:
-                ax.plot(self.times, self.series(variable), label=variable)
-
-        ax.set_xlabel('Time')
-        if norm:
-            ax.set_ylabel('Concentration (normed)')
-        else:
-            ax.set_ylabel('Concentration')
-
-        sb.despine()
+            y = normed(self.series(variable)) if norm else self.series(variable)
+            ax.plot(self.times, y, label=variable)
 
         if not labels_xvals:
             # Add evenly-spaced labels

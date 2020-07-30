@@ -21,7 +21,7 @@ class ClusterSet:
         y = np.ones(len(times)) * y_height
         ax.scatter(times, y, c=self.clusters, cmap=cmap, vmin=1, vmax=number_of_colors)
 
-    def plot_dendrogram(self, ax=None, leaf_rotation=90, leaf_font_size=6, title=''):
+    def plot_dendrogram(self, ax=None, leaf_rotation=90, leaf_font_size=6):
         if ax is None:
             ax = plt.gca()
 
@@ -33,11 +33,7 @@ class ClusterSet:
             color_threshold=distance_threshold,
             above_threshold_color='black',
             ax=ax)
-
         ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
-        ax.set_title(title, weight="bold")
-        ax.set_ylabel('Distance threshold')
-        ax.set_xlabel("Time points")
 
     def plot_silhouette_samples(self, ax=None, title=''):
         if ax is None:

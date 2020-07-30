@@ -35,14 +35,11 @@ class ClusterSet:
             ax=ax)
         ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
 
-    def plot_silhouette_samples(self, ax=None, title=''):
+    def plot_silhouette_samples(self, ax=None):
         if ax is None:
             ax = plt.gca()
 
-        if self.size > 10:
-            sb.set_palette("tab20")
-        else:
-            sb.set_palette("tab10")
+        sb.set_palette("tab20" if self.size > 10 else "tab10")
 
         y_lower = 1
         for i, cluster in enumerate(np.unique(self.clusters)):
@@ -60,9 +57,7 @@ class ClusterSet:
                 vertical_padding = 1
                 y_lower = y_upper + vertical_padding
 
-        ax.set_title(title)
         ax.axvline(x=self.silhouette.average, c='k', ls='--')
-        sb.despine()
 
     def distance_threshold(self):
         number_of_observations = self.snapshots.linkage.shape[0] + 1

@@ -56,8 +56,6 @@ class ClusterSets(Sequence):
         ax.plot(self.sizes, self.limits, 'ko-')
 
     def plot_silhouette_samples(self, axs):
+        flat_axs = axs.flatten()
         for i, cluster_set in enumerate(self._cluster_sets):
-            ax = axs.flatten()[i]
-            title = f'{display_name(cluster_set.limit_type)} = {cluster_set.limit}'
-            subtitle = f'({int(cluster_set.size)} clusters)'
-            cluster_set.plot_silhouette_samples(ax=ax, title=f'{title}\n{subtitle}')
+            cluster_set.plot_silhouette_samples(ax=flat_axs[i])

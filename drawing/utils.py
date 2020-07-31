@@ -48,8 +48,18 @@ def configure_color_map():
     sch.set_link_color_palette([mpl.colors.rgb2hex(rgb[:3]) for rgb in cmap])
 
 
-def increase_limits(top, bottom, increase_top, increase_bottom):
-    difference = top - bottom
-    new_bottom = bottom - (difference * increase_bottom)
-    new_top = top + (difference * increase_top)
-    return [new_bottom, new_top]
+def adjust_margin(ax=None, top=0, bottom=0, left=0, right=0):
+    if ax is None:
+        ax = plt.gca()
+
+    if top or bottom:
+        y_limits = ax.get_ylim()
+        difference = y_limits[-1] - y_limits[0]
+        new_y_limits = [y_limits[0] - difference * bottom, y_limits[-1] + difference * top]
+        ax.set_ylim(new_y_limits)
+
+    if left or right:
+        x_limits = ax.get_xlim()
+        difference = x_limits[-1] - x_limits[0]
+        new_x_limits = [x_limits[0] - difference * left, x_limits[-1] + difference * right]
+        ax.set_xlim(new_x_limits)

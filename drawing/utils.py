@@ -43,7 +43,7 @@ def display_name(key):
     return _display_names[key] if key in _display_names else key
 
 
-def configure_color_map():
+def configure_sch_color_map():
     cmap = cm.tab10(np.linspace(0, 1, 10))
     sch.set_link_color_palette([mpl.colors.rgb2hex(rgb[:3]) for rgb in cmap])
 

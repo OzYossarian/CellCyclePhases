@@ -1,3 +1,4 @@
+import networkx
 import numpy as np
 import pandas as pd
 import teneto
@@ -76,3 +77,103 @@ class TemporalNetwork:
     def from_file(_class, filepath, separator):
         edges = pd.read_csv(filepath, sep=separator, engine='python')
         return TemporalNetwork.from_dataframe(edges)
+
+    @classmethod
+    def from_static_network_file(
+            _class,
+            static_network_filepath,
+            static_network_format,
+            static_network_separator=None,
+            temporal_edge_data_filepath=None,
+            temporal_node_data_filepath=None,
+            temporal_data_separator=None,
+            threshold=1,
+            combine_node_weights=lambda x, y: x * y):
+
+        # Static network can be an adjacancy matrix saved as a numpy array or 'static_network_separator' separated
+        # file, or in any format supported by networkx's read/write functionality, with the exception of JSON data
+        # formats. See https://networkx.github.io/documentation/stable/reference/readwrite/index.html for more details,
+        # and see the function read_static_network for options for the parameter static_network_format.
+
+        # Only one of temporal edge data or temporal node data should be provided.
+
+        # Temporal edge data should be a 'temporal_data_separator' separated file with three or four columns,
+        # representing source node, target node, time and (optionally) weight, respectively. If the weight column is
+        # omitted then all weights are taken to be 1. For nodes i and j, if the static network contains an edge ij,
+        # and at time t the edge ij has weight w at least 'threshold', then the temporal network will contain an
+        # edge ij at time t of weight w.
+
+        # Temporal node data should be a 'temporal_data_separator' separated file with two or three columns,
+        # representing node, time and (optionally) weight, respectively. If the weight column is omitted then all
+        # weights are taken to be 1. For nodes i and j, if the static network contains an edge ij, and at time t the
+        # the result r of passing the weight of i and the weight of j to 'combine_node_weights' is at least
+        # 'threshold', then the temporal network will contain an edge ij at time t of weight r.
+
+        if not temporal_edge_data_filepath and not temporal_node_data_filepath:
+            raise ValueError('No temporal data provided')
+        elif temporal_edge_data_filepath and temporal_node_data_filepath:
+            raise ValueError('Only one of temporal edge data or temporal node data should be provided')
+
+        networkx_graph = read_static_network(
+            static_network_filepath,
+            static_network_format,
+            separator=static_network_separator)
+
+        if temporal_node_data_filepath:
+            nodes = pd.read_csv(temporal_node_data_filepath, sep=temporal_data_separator, engine='python')
+            if len(nodes.columns) == 2:
+                nodes['w'] = 1
+            nodes.columns = ['i', 't', 'w']
+            # Merge to form temporal edge data
+            edges = nodes.merge(nodes, left_on='t', right_on='t', suffixes=('_1', '_2'))
+            # Remove duplicates and self-loops
+            edges = edges[edges['i_1'] < edges['i_2']]
+            # Only keep rows meeting threshold criteria
+            edges['r'] = edges.apply(lambda edge: combine_node_weights(edge['w_1'], edge['w_2']), axis=1)
+            edges = edges[['i_1', 'i_2', 't', 'r']]
+        else:
+            edges = pd.read_csv(temporal_edge_data_filepath, sep=temporal_data_separator, engine='python')
+            if len(edges.columns) == 3:
+                edges['w'] = 1
+
+        edges.columns = ['i', 'j', 't', 'w']
+        edges = edges[edges['w'] >= threshold]
+        edges = edges[edges.apply(lambda edge: networkx_graph.has_edge(edge['i'], edge['j']), axis=1)]
+        edges.reset_index(drop=True, inplace=True)
+        return _class.from_dataframe(edges)
+
+
+def read_static_network(path, format, **kwargs):
+    separator = kwargs['separator'] if 'separator' in kwargs else None
+    if format == 'adjacency_matrix_numpy':
+        return networkx.from_numpy_array(np.load(path, allow_pickle=True))
+    elif format == 'adjacency_matrix':
+        return networkx.from_pandas_adjacency(pd.read_csv(path, sep=separator, engine='python'))
+    elif format == 'adjacency_list':
+        return networkx.read_adjlist(path, delimiter=separator)
+    elif format == 'adjecency_list_multiline':
+        return networkx.read_multiline_adjlist(path, delimiter=separator)
+    elif format == 'edge_list':
+        return networkx.read_edgelist(path, delimiter=separator)
+    elif format == 'GEXF':
+        return networkx.read_gexf(path)
+    elif format == 'GML':
+        return networkx.read_gml(path)
+    elif format == 'pickle':
+        return networkx.read_gpickle(path)
+    elif format == 'GraphML':
+        return networkx.read_graphml(path)
+    elif format == 'LEDA':
+        return networkx.read_leda(path)
+    elif format == 'YAML':
+        return networkx.read_yaml(path)
+    elif format == 'graph6':
+        return networkx.read_graph6(path)
+    elif format == 'sparse6':
+        return networkx.read_sparse6(path)
+    elif format == 'Pajek':
+        return networkx.read_pajek(path)
+    elif format == 'shapefile':
+        return networkx.read_shp(path)
+    else:
+        raise ValueError(f'Unrecognised static network format {format}')

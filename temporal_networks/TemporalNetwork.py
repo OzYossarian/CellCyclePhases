@@ -120,60 +120,90 @@ class TemporalNetwork:
             separator=static_network_separator)
 
         if temporal_node_data_filepath:
-            nodes = pd.read_csv(temporal_node_data_filepath, sep=temporal_data_separator, engine='python')
-            if len(nodes.columns) == 2:
-                nodes['w'] = 1
-            nodes.columns = ['i', 't', 'w']
-            # Merge to form temporal edge data
-            edges = nodes.merge(nodes, left_on='t', right_on='t', suffixes=('_1', '_2'))
-            # Remove duplicates and self-loops
-            edges = edges[edges['i_1'] < edges['i_2']]
-            # Only keep rows meeting threshold criteria
-            edges['r'] = edges.apply(lambda edge: combine_node_weights(edge['w_1'], edge['w_2']), axis=1)
-            edges = edges[['i_1', 'i_2', 't', 'r']]
+            edges, missing = read_temporal_node_data(
+                networkx_graph, temporal_data_separator, temporal_node_data_filepath, combine_node_weights)
         else:
-            edges = pd.read_csv(temporal_edge_data_filepath, sep=temporal_data_separator, engine='python')
-            if len(edges.columns) == 3:
-                edges['w'] = 1
+            edges, missing = read_temporal_edge_data(
+                networkx_graph, temporal_data_separator, temporal_edge_data_filepath)
 
-        edges.columns = ['i', 'j', 't', 'w']
+        # Only keep edges meeting filter criteria
         edges = edges[edges['w'] >= threshold]
-        edges = edges[edges.apply(lambda edge: networkx_graph.has_edge(edge['i'], edge['j']), axis=1)]
         edges.reset_index(drop=True, inplace=True)
+
+        if not missing.empty:
+            if temporal_node_data_filepath:
+                missing_nodes = missing["i"].values
+                print(f'WARNING: The following nodes were not found in the static network:\n{missing_nodes}')
+            else:
+                missing_edges = list(zip(missing["i"], missing["j"]))
+                print(f'WARNING: The following edges were not found in the static network:\n{missing_edges}')
+
         return _class.from_dataframe(edges)
 
 
-def read_static_network(path, format, **kwargs):
+def read_temporal_edge_data(networkx_graph, separator, filepath):
+    edges = pd.read_csv(filepath, sep=separator, engine='python')
+    if len(edges.columns) == 3:
+        edges['w'] = 1
+    edges.columns = ['i', 'j', 't', 'w']
+    missing_edges_indices = edges.apply(lambda edge: not networkx_graph.has_edge(edge['i'], edge['j']), axis=1)
+    missing_edges = edges[missing_edges_indices]
+    # Only keep edges that are present in the static network
+    edges = edges[~missing_edges_indices]
+    return edges, missing_edges
+
+
+def read_temporal_node_data(networkx_graph, separator, filepath, combine_node_weights):
+    nodes = pd.read_csv(filepath, sep=separator, engine='python')
+    if len(nodes.columns) == 2:
+        nodes['w'] = 1
+    nodes.columns = ['i', 't', 'w']
+    missing_nodes_indices = nodes.apply(lambda node: not networkx_graph.has_node(node['i']), axis=1)
+    missing_nodes = nodes[missing_nodes_indices]
+    # Only keep nodes that are present in the static network
+    nodes = nodes[~missing_nodes_indices]
+    # Merge to form temporal edge data
+    edges = nodes.merge(nodes, left_on='t', right_on='t', suffixes=('_1', '_2'))
+    # Remove duplicates and self-loops
+    edges = edges[edges['i_1'] < edges['i_2']]
+    # Add column for combined weight
+    edges['r'] = edges.apply(lambda edge: combine_node_weights(edge['w_1'], edge['w_2']), axis=1)
+    edges = edges[['i_1', 'i_2', 't', 'r']]
+    edges.columns = ['i', 'j', 't', 'w']
+    return edges, missing_nodes
+
+
+def read_static_network(filepath, format, **kwargs):
     separator = kwargs['separator'] if 'separator' in kwargs else None
     if format == 'adjacency_matrix_numpy':
-        return networkx.from_numpy_array(np.load(path, allow_pickle=True))
+        return networkx.from_numpy_array(np.load(filepath, allow_pickle=True))
     elif format == 'adjacency_matrix':
-        return networkx.from_pandas_adjacency(pd.read_csv(path, sep=separator, engine='python'))
+        return networkx.from_pandas_adjacency(pd.read_csv(filepath, sep=separator, engine='python'))
     elif format == 'adjacency_list':
-        return networkx.read_adjlist(path, delimiter=separator)
+        return networkx.read_adjlist(filepath, delimiter=separator)
     elif format == 'adjecency_list_multiline':
-        return networkx.read_multiline_adjlist(path, delimiter=separator)
+        return networkx.read_multiline_adjlist(filepath, delimiter=separator)
     elif format == 'edge_list':
-        return networkx.read_edgelist(path, delimiter=separator)
+        return networkx.read_edgelist(filepath, delimiter=separator)
     elif format == 'GEXF':
-        return networkx.read_gexf(path)
+        return networkx.read_gexf(filepath)
     elif format == 'GML':
-        return networkx.read_gml(path)
+        return networkx.read_gml(filepath)
     elif format == 'pickle':
-        return networkx.read_gpickle(path)
+        return networkx.read_gpickle(filepath)
     elif format == 'GraphML':
-        return networkx.read_graphml(path)
+        return networkx.read_graphml(filepath)
     elif format == 'LEDA':
-        return networkx.read_leda(path)
+        return networkx.read_leda(filepath)
     elif format == 'YAML':
-        return networkx.read_yaml(path)
+        return networkx.read_yaml(filepath)
     elif format == 'graph6':
-        return networkx.read_graph6(path)
+        return networkx.read_graph6(filepath)
     elif format == 'sparse6':
-        return networkx.read_sparse6(path)
+        return networkx.read_sparse6(filepath)
     elif format == 'Pajek':
-        return networkx.read_pajek(path)
+        return networkx.read_pajek(filepath)
     elif format == 'shapefile':
-        return networkx.read_shp(path)
+        return networkx.read_shp(filepath)
     else:
         raise ValueError(f'Unrecognised static network format {format}')

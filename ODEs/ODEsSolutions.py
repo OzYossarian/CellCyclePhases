@@ -11,9 +11,9 @@ comparators = {'minima': np.less, 'maxima': np.greater}
 
 
 class ODEsSolutions:
-    def __init__(self, filepath, start_time=None, end_time=None):
+    def __init__(self, filepath, start_time=None, end_time=None, xpp_alias='xppaut'):
         # If given, start time should be inclusive and end_time should be exclusive.
-        times_and_solutions, variables = xpprun(filepath, clean_after=True)
+        times_and_solutions, variables = xpprun(filepath, xppname=xpp_alias, clean_after=True)
 
         # Since our temporal network has had times shifted to start at zero, do the same here.
         self.true_times = times_and_solutions[start_time:end_time, 0]

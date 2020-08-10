@@ -1,3 +1,5 @@
+import pathlib
+import pickle
 import networkx
 import numpy as np
 import pandas as pd
@@ -35,19 +37,19 @@ class TemporalNetwork:
             return self.node_ids_to_names[id]
 
     @classmethod
-    def from_snapshots(_class, snapshots):
+    def from_snapshots(_class, snapshots, node_ids_to_names=None):
         # 'snapshots' should be a numpy.array with dimensions (time, nodes, nodes)
         array = np.swapaxes(snapshots, 0, 2)
-        return TemporalNetwork.from_array(array)
+        return TemporalNetwork.from_array(array, node_ids_to_names)
 
     @classmethod
-    def from_array(_class, array):
+    def from_array(_class, array, node_ids_to_names=None):
         # 'array' should be a numpy.array with dimensions (nodes, nodes, time)
         teneto_network = teneto.TemporalNetwork(from_array=array)
-        return _class(teneto_network)
+        return _class(teneto_network, node_ids_to_names=node_ids_to_names)
 
     @classmethod
-    def from_dataframe(_class, edges):
+    def from_edge_list_dataframe(_class, edges):
         # 'edges' should be a pandas.DataFrame
         number_of_columns = edges.shape[1]
         # Columns must be named i, j and t, with optional weight column
@@ -74,9 +76,18 @@ class TemporalNetwork:
         return _class(teneto.TemporalNetwork(from_df=edges), start_time, ids_to_names)
 
     @classmethod
-    def from_file(_class, filepath, separator):
+    def from_edge_list_file(_class, filepath, separator=None):
         edges = pd.read_csv(filepath, sep=separator, engine='python')
-        return TemporalNetwork.from_dataframe(edges)
+        return TemporalNetwork.from_edge_list_dataframe(edges)
+
+    @classmethod
+    def from_snapshots_file(_class, snapshots_filepath, node_ids_to_names_filepath=None):
+        snapshots = load_file(snapshots_filepath)
+        node_ids_to_names = load_file(node_ids_to_names_filepath)
+        if isinstance(node_ids_to_names, np.ndarray):
+            # Extract the dictionary from the numpy array
+            node_ids_to_names = node_ids_to_names.item()
+        return _class.from_snapshots(snapshots, node_ids_to_names)
 
     @classmethod
     def from_static_network_file(
@@ -120,25 +131,27 @@ class TemporalNetwork:
             separator=static_network_separator)
 
         if temporal_node_data_filepath:
-            edges, missing = read_temporal_node_data(
+            edges = read_temporal_node_data(
                 networkx_graph, temporal_data_separator, temporal_node_data_filepath, combine_node_weights)
         else:
-            edges, missing = read_temporal_edge_data(
-                networkx_graph, temporal_data_separator, temporal_edge_data_filepath)
+            edges = read_temporal_edge_data(networkx_graph, temporal_data_separator, temporal_edge_data_filepath)
 
-        # Only keep edges meeting filter criteria
+        # Only keep edges meeting threshold criteria
         edges = edges[edges['w'] >= threshold]
         edges.reset_index(drop=True, inplace=True)
+        return _class.from_edge_list_dataframe(edges)
 
-        if not missing.empty:
-            if temporal_node_data_filepath:
-                missing_nodes = missing["i"].values
-                print(f'WARNING: The following nodes were not found in the static network:\n{missing_nodes}')
-            else:
-                missing_edges = list(zip(missing["i"], missing["j"]))
-                print(f'WARNING: The following edges were not found in the static network:\n{missing_edges}')
 
-        return _class.from_dataframe(edges)
+def load_file(filepath):
+    file_type = pathlib.Path(filepath).suffix.lower()
+    if file_type == '.npy':
+        loaded = np.load(filepath, allow_pickle=True)
+    elif file_type in ['.pkl', '.pickle']:
+        loaded = pickle.load(filepath)
+    else:
+        raise ValueError(f'Unknown file type "{file_type}" - consider loading the file yourself then '
+                         f'using a different constructor')
+    return loaded
 
 
 def read_temporal_edge_data(networkx_graph, separator, filepath):
@@ -146,11 +159,16 @@ def read_temporal_edge_data(networkx_graph, separator, filepath):
     if len(edges.columns) == 3:
         edges['w'] = 1
     edges.columns = ['i', 'j', 't', 'w']
+
     missing_edges_indices = edges.apply(lambda edge: not networkx_graph.has_edge(edge['i'], edge['j']), axis=1)
     missing_edges = edges[missing_edges_indices]
+    if not missing_edges.empty:
+        missing_edges = list(zip(missing_edges["i"], missing_edges["j"]))
+        print(f'WARNING: The following edges were not found in the static network:\n{missing_edges}')
+
     # Only keep edges that are present in the static network
     edges = edges[~missing_edges_indices]
-    return edges, missing_edges
+    return edges
 
 
 def read_temporal_node_data(networkx_graph, separator, filepath, combine_node_weights):
@@ -158,8 +176,12 @@ def read_temporal_node_data(networkx_graph, separator, filepath, combine_node_we
     if len(nodes.columns) == 2:
         nodes['w'] = 1
     nodes.columns = ['i', 't', 'w']
+
     missing_nodes_indices = nodes.apply(lambda node: not networkx_graph.has_node(node['i']), axis=1)
     missing_nodes = nodes[missing_nodes_indices]
+    if not missing_nodes.empty:
+        print(f'WARNING: The following nodes were not found in the static network:\n{missing_nodes["i"].values}')
+
     # Only keep nodes that are present in the static network
     nodes = nodes[~missing_nodes_indices]
     # Merge to form temporal edge data
@@ -170,7 +192,7 @@ def read_temporal_node_data(networkx_graph, separator, filepath, combine_node_we
     edges['r'] = edges.apply(lambda edge: combine_node_weights(edge['w_1'], edge['w_2']), axis=1)
     edges = edges[['i_1', 'i_2', 't', 'r']]
     edges.columns = ['i', 'j', 't', 'w']
-    return edges, missing_nodes
+    return edges
 
 
 def read_static_network(filepath, format, **kwargs):

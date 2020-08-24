@@ -1,9 +1,6 @@
-import pathlib
-import pickle
 import numpy as np
 import pandas as pd
 import teneto
-
 
 class TemporalNetwork:
     def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None):
@@ -51,14 +48,11 @@ class TemporalNetwork:
     def from_edge_list_dataframe(_class, edges, normalise=False, threshold=0, binary=False):
         # 'edges' should be a pandas.DataFrame
         number_of_columns = edges.shape[1]
-        # Columns must be named i, j and t, with optional weight column
         if number_of_columns == 3:
-            columns = ['i', 'j', 't']
-        elif number_of_columns == 4:
-            columns = ['i', 'j', 't', 'weight']
-        else:
-            raise ValueError('List of edges requires either 3 or 4 columns')
-        edges.columns = columns
+            edges['weight'] = 1
+        elif number_of_columns != 4:
+            raise ValueError('Edge list requires either 3 or 4 columns')
+        edges.columns = ['i', 'j', 't', 'weight']
 
         if normalise:
             edges['weight'] = (edges['weight'] / edges['weight'].max())
@@ -66,17 +60,9 @@ class TemporalNetwork:
         if binary:
             edges[edges['weight'] > 0]['weight'] = 1
 
-        # Replace node names with numeric values
-        nodes = sorted(set(edges[['i', 'j']].values.flatten()))
-        names_to_ids = {key: i for i, key in enumerate(nodes)}
-        ids_to_names = {i: key for i, key in enumerate(nodes)}
-
-        # ToDo - this is now the slowest step in creating a TemporalNetwork; speed it up?
-        edges = edges.replace(names_to_ids)
-
+        edges, ids_to_names = replace_nodes_with_ids(edges)
         edges = edges.sort_values('t')
-        edges.reset_index(drop=True, inplace=True)
-        start_time = edges['t'][0]
+        start_time = edges['t'].iloc[0]
         if start_time != 0:
             # For compatibility with teneto, shift all times so that we start at time 0
             edges['t'] -= start_time
@@ -211,3 +197,17 @@ class TemporalNetwork:
 
         return _class.from_static_network_and_node_list_dataframe(
             static_network, node_list, combine_node_weights, normalise, threshold, binary)
+
+
+def replace_nodes_with_ids(edges):
+    unique_nodes = pd.concat([edges['i'], edges['j']]).to_frame().drop_duplicates(ignore_index=True)
+    unique_nodes.reset_index(inplace=True)
+    unique_nodes.columns = ['id', 'name']
+    ids_to_names = unique_nodes.to_dict()['name']
+
+    edges = edges.merge(unique_nodes, how='left', left_on='i', right_on='name')
+    edges = edges.merge(unique_nodes, how='left', left_on='j', right_on='name')
+    edges = edges[['id_x', 'id_y', 't', 'weight']]
+    edges.columns = ['i', 'j', 't', 'weight']
+
+    return edges, ids_to_names

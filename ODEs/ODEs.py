@@ -20,15 +20,17 @@ def plot_events(events, ax=None, y_pos=None, text_x_offset=0):
 def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
     if ax is None:
         ax = plt.gca()
-    if y_pos is None:
-        y_pos = 1.01 * ax.get_ylim()[1]
+
+    y_pos = y_pos if y_pos is not None else 1.01
+    y_lim = ax.get_ylim()
+    absolute_y_pos = y_lim[0] + y_pos * (y_lim[1] - y_lim[0])
 
     for i, phase in enumerate(phases):
         start_time, end_time, name = phase
         mid_time = (start_time + end_time)/2
-        # ToDo - better 'alpha' variable?
-        ax.axvspan(xmin=start_time, xmax=end_time, ymin=ymin, ymax=ymax, color='k', alpha=+ 0.15 * i)
-        ax.text(mid_time, y_pos, name, fontweight='bold', va='bottom', ha='center')
+        alpha_interval = 0.5 / len(phases)
+        ax.axvspan(xmin=start_time, xmax=end_time, ymin=ymin, ymax=ymax, color='k', alpha=alpha_interval*(i+1))
+        ax.text(mid_time, absolute_y_pos, name, fontweight='bold', va='center', ha='center')
 
 
 def normed(x):

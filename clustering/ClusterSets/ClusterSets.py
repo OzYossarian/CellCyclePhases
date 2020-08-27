@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from drawing.utils import display_name
+import drawing
 from collections import Sequence
 from clustering.Silhouettes import Silhouettes
 
@@ -44,6 +44,29 @@ class ClusterSets(Sequence):
         self.plot(ax=axs[0])
         self.plot_average_silhouettes(ax=axs[1])
         self.plot_sizes(ax=axs[2])
+
+    def plot_and_format_with_average_silhouettes(self, axs, events, phases, time_ticks=None):
+        (ax1, ax2, ax3) = axs
+
+        # Plot
+        ax3.tick_params(labelleft=True, labelbottom=True)
+        self.plot_with_average_silhouettes((ax1, ax2, ax3))
+        drawing.utils.adjust_margin(ax1, bottom=(0.15 if phases else 0))
+        drawing.utils.plot_events(events, ax=ax1)
+        drawing.utils.plot_phases(phases, ax=ax1, y_pos=0.04, ymax=0.1)
+
+        # Format
+        ax1.set_xlabel("Time")
+        ax1.set_ylabel(drawing.utils.display_name(self.limit_type))
+        ax1.tick_params(labelbottom=True)
+        if time_ticks:
+            ax1.set_xticks(time_ticks)
+
+        ax2.set_xlabel("Average silhouette")
+        ax2.set_xlim((0, 1))
+        ax2.tick_params(labelleft=True, labelbottom=True)
+
+        ax3.set_xlabel("Actual # clusters")
 
     def plot_average_silhouettes(self, ax):
         if ax is None:

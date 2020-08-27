@@ -26,6 +26,9 @@ class Snapshots:
         distance_matrix = DistanceMatrix(distance_matrix_full, distance_matrix_condensed, metric)
 
         if method != 'k_means':
-            linkage = sch.linkage(distance_matrix_condensed, method=method)
+            if len(distance_matrix_condensed) > 0:
+                linkage = sch.linkage(distance_matrix_condensed, method=method)
+            else:
+                linkage = None
 
         return _class(flat_snapshots, linkage, distance_matrix, method, times)

@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 
-from ODEs import ODEs
+import drawing
 from clustering.ClusterSets.HierarchicalClusterSets import HierarchicalClusterSets
 from clustering.ClusterSets.KMeansClusterSets import KMeansClusterSets
 from clustering.Snapshots import Snapshots
-from drawing.utils import display_name
 
 
 def calculate_and_plot_silhouettes(
@@ -33,13 +32,13 @@ def calculate_and_plot_silhouettes(
         y_min = min(cluster_limit_range)
         difference = y_max - y_min
         ax1.set_ylim(y_min - 0.2 * difference, y_max + 0.05 * difference)
-        ODEs.plot_events(events, ax=ax1)
-        ODEs.plot_phases(phases, ax=ax1, y_pos=0.05, ymax=0.1)
+        drawing.utils.plot_events(events, ax=ax1)
+        drawing.utils.plot_phases(phases, ax=ax1, y_pos=0.05, ymax=0.1)
 
         # Format
         ax1.set_xlabel("Time")
         ax1.set_axisbelow(True)
-        ax1.set_ylabel(display_name(cluster_sets.limit_type))
+        ax1.set_ylabel(drawing.utils.display_name(cluster_sets.limit_type))
         if time_ticks:
             ax1.set_xticks(time_ticks)
 

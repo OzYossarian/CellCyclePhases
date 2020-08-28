@@ -94,3 +94,11 @@ def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
         alpha_interval = 0.5 / len(phases)
         ax.axvspan(xmin=start_time, xmax=end_time, ymin=ymin, ymax=ymax, color='k', alpha=alpha_interval*(i+1))
         ax.text(mid_time, absolute_y_pos, name, fontweight='bold', va='center', ha='center')
+
+
+def slugify(text, keep_characters=None):
+    if keep_characters is None:
+        keep_characters = ['_']
+    end = next((i for i, c in enumerate(text) if not c.isalnum() and c not in keep_characters), -1)
+    slug = text[:end]
+    return slug

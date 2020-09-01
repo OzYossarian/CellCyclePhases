@@ -97,8 +97,7 @@ def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
 
 
 def slugify(text, keep_characters=None):
-    if keep_characters is None:
-        keep_characters = ['_']
-    end = next((i for i, c in enumerate(text) if not c.isalnum() and c not in keep_characters), -1)
+    keep_characters = ['_'] if keep_characters is None else keep_characters
+    end = next((i for i, c in enumerate(text) if not c.isalnum() and c not in keep_characters), None)
     slug = text[:end]
     return slug

@@ -40,7 +40,7 @@ class TemporalData:
         mass_minima, mass_minima_times = self.relative_optima(series_name, optima_type)
         ax.plot(self.times[mass_minima_times], mass_minima, 'ro')
 
-    def plot_series(self, series_names, ax=None, norm=False, labels_xvals=None):
+    def plot_series(self, series_names, ax=None, norm=False, add_labels=True, labels_xvals=None):
         if ax is None:
             ax = plt.gca()
 
@@ -48,11 +48,12 @@ class TemporalData:
             y = normed(self.series(series_name)) if norm else self.series(series_name)
             ax.plot(self.times, y, label=series_name)
 
-        if not labels_xvals:
-            # Add evenly-spaced labels
-            labels_interval = len(self.times) // (len(series_names) + 1)
-            labels_xvals = [self.times[labels_interval * (i + 1)] for i in range(len(series_names))]
-        labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
+        if add_labels:
+            if not labels_xvals:
+                # Add evenly-spaced labels
+                labels_interval = len(self.times) // (len(series_names) + 1)
+                labels_xvals = [self.times[labels_interval * (i + 1)] for i in range(len(series_names))]
+            labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
 
 
 def normed(x):

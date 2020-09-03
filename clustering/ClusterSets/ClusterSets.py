@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-import drawing
 from collections import Sequence
 from clustering.Silhouettes import Silhouettes
+from utils import drawing
+from utils.plotting import plot_phases, plot_events
 
 
 class ClusterSets(Sequence):
@@ -37,8 +38,9 @@ class ClusterSets(Sequence):
         if ax is None:
             ax = plt.gca()
         for cluster_set in self._cluster_sets:
-            (cmap, number_of_colors) = (plt.cm.tab20, 20) if cluster_set.size > 10 else (plt.cm.tab10, 10)
-            cluster_set.plot(ax=ax, y_height=cluster_set.limit, cmap=cmap, number_of_colors=number_of_colors)
+            (cmap, number_of_colors) = ('tab20', 20) if cluster_set.size > 10 else ('tab10', 10)
+            cluster_set.plot(
+                ax=ax, y_height=cluster_set.limit, cmap=plt.cm.get_cmap(cmap), number_of_colors=number_of_colors)
 
     def plot_with_average_silhouettes(self, axs):
         self.plot(ax=axs[0])
@@ -51,13 +53,13 @@ class ClusterSets(Sequence):
         # Plot
         ax3.tick_params(labelleft=True, labelbottom=True)
         self.plot_with_average_silhouettes((ax1, ax2, ax3))
-        drawing.utils.adjust_margin(ax1, bottom=(0.15 if phases else 0))
-        drawing.utils.plot_events(events, ax=ax1)
-        drawing.utils.plot_phases(phases, ax=ax1, y_pos=0.04, ymax=0.1)
+        drawing.adjust_margin(ax1, bottom=(0.15 if phases else 0))
+        plot_events(events, ax=ax1)
+        plot_phases(phases, ax=ax1, y_pos=0.04, ymax=0.1)
 
         # Format
         ax1.set_xlabel("Time")
-        ax1.set_ylabel(drawing.utils.display_name(self.limit_type))
+        ax1.set_ylabel(drawing.display_name(self.limit_type))
         ax1.tick_params(labelbottom=True)
         if time_ticks:
             ax1.set_xticks(time_ticks)

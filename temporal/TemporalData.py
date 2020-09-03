@@ -9,9 +9,10 @@ comparators = {'minima': np.less, 'maxima': np.greater}
 
 
 class TemporalData:
-    def __init__(self, all_series, series_names, times, true_times):
-        self.all_series = all_series
-        self.series_names = series_names
+    def __init__(self, temporal_data, variables, times, true_times):
+        # 'variables' should be a list (NOT, for example, a numpy array)
+        self.temporal_data = temporal_data
+        self.variables = variables
         self.times = times
         self.true_times = true_times
 
@@ -26,33 +27,33 @@ class TemporalData:
         all_series = times_and_series[start_time:end_time, 1:]
         return class_(all_series, series_names, times, true_times)
 
-    def series(self, series_name):
-        return self.all_series[:, self.series_names.index(series_name)]
+    def series(self, variable):
+        return self.temporal_data[:, self.variables.index(variable)]
 
-    def relative_optima(self, series_name, optima_type):
-        series = self.series(series_name)
+    def relative_optima(self, variable, optima_type):
+        series = self.series(variable)
         optima_times = scipy.signal.argrelextrema(series, comparators[optima_type])
         optima = series[optima_times]
         return optima, optima_times
 
-    def plot_relative_optima(self, series_name, optima_type, ax=None):
-        ax.plot(self.times, self.series(series_name), 'o-')
-        mass_minima, mass_minima_times = self.relative_optima(series_name, optima_type)
+    def plot_relative_optima(self, variable, optima_type, ax=None):
+        ax.plot(self.times, self.series(variable), 'o-')
+        mass_minima, mass_minima_times = self.relative_optima(variable, optima_type)
         ax.plot(self.times[mass_minima_times], mass_minima, 'ro')
 
-    def plot_series(self, series_names, ax=None, norm=False, add_labels=True, labels_xvals=None):
+    def plot_series(self, variables, ax=None, norm=False, add_labels=True, labels_xvals=None):
         if ax is None:
             ax = plt.gca()
 
-        for series_name in series_names:
-            y = normed(self.series(series_name)) if norm else self.series(series_name)
-            ax.plot(self.times, y, label=series_name)
+        for variable in variables:
+            y = normed(self.series(variable)) if norm else self.series(variable)
+            ax.plot(self.times, y, label=variable)
 
         if add_labels:
             if not labels_xvals:
                 # Add evenly-spaced labels
-                labels_interval = len(self.times) // (len(series_names) + 1)
-                labels_xvals = [self.times[labels_interval * (i + 1)] for i in range(len(series_names))]
+                labels_interval = len(self.times) // (len(variables) + 1)
+                labels_xvals = [self.times[labels_interval * (i + 1)] for i in range(len(variables))]
             labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
 
 

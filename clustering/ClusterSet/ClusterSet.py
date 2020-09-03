@@ -14,7 +14,7 @@ class ClusterSet:
         self.limit = cluster_limit
         self.silhouette = silhouette
 
-    def plot(self, ax=None, y_height=0, cmap=cm.tab10, number_of_colors=10):
+    def plot(self, ax=None, y_height=0, cmap=cm.get_cmap('tab10'), number_of_colors=10):
         times = self.snapshots.times
         y = np.ones(len(times)) * y_height
         ax.scatter(times, y, c=self.clusters, cmap=cmap, vmin=1, vmax=number_of_colors)

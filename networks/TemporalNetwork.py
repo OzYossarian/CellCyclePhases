@@ -3,10 +3,11 @@ import pandas as pd
 import teneto
 
 class TemporalNetwork:
-    def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None):
+    def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None, edge_list=None):
         self.teneto_network = teneto_network
         self.time_shift = time_shift
         self.node_ids_to_names = node_ids_to_names
+        self.edge_list = edge_list
 
         # Keep track of the 'true' times, even though we've shifted to start at 0
         if teneto_network.sparse:
@@ -23,6 +24,14 @@ class TemporalNetwork:
         snapshots = np.swapaxes(array, 0, 2)
         return snapshots
 
+    def get_edgelist(self):
+        if self.edge_list is not None:
+            return self.edge_list.copy()
+        elif not self.sparse():
+            return self.teneto_network.network
+        else:
+            raise ValueError('Temporal network is not a format that allows edge list to be returned.')
+
     def sparse(self):
         return self.teneto_network.sparse
 
@@ -36,7 +45,7 @@ class TemporalNetwork:
     def from_snapshots_numpy_array(_class, snapshots, node_ids_to_names=None):
         # 'snapshots' should be a numpy.array with dimensions (time, nodes, nodes)
         array = np.swapaxes(snapshots, 0, 2)
-        return TemporalNetwork.from_numpy_array(array, node_ids_to_names)
+        return _class.from_numpy_array(array, node_ids_to_names)
 
     @classmethod
     def from_numpy_array(_class, array, node_ids_to_names=None):
@@ -47,6 +56,15 @@ class TemporalNetwork:
     @classmethod
     def from_edge_list_dataframe(_class, edges, normalise=False, threshold=0, binary=False):
         # 'edges' should be a pandas.DataFrame
+
+        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
+        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
+        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
+
+        # Any edges with weight < 'threshold' (after normalising) will not be included in the temporal network.
+
+        # If binary = True, all positive weights (after thresholding) will be set to 1.
+
         number_of_columns = edges.shape[1]
         if number_of_columns == 3:
             edges['weight'] = 1
@@ -54,11 +72,22 @@ class TemporalNetwork:
             raise ValueError('Edge list requires either 3 or 4 columns')
         edges.columns = ['i', 'j', 't', 'weight']
 
-        if normalise:
-            edges['weight'] = (edges['weight'] / edges['weight'].max())
+        if normalise == 'global':
+            min_weight = edges['weight'].min()
+            difference = edges['weight'].max() - min_weight
+            edges['weight'] = (edges['weight'] - min_weight) / difference
+        if normalise == 'local':
+            # Sort first two columns; we only care about *unordered* pairs (i,j), not ordered pairs.
+            edges[['i', 'j']] = np.sort(edges[['i', 'j']], axis=1)
+            grouped = edges.groupby(['i', 'j'])['weight']
+            maxes = grouped.transform('max')
+            mins = grouped.transform('min')
+            edges['weight'] = (edges['weight'] - mins) / (maxes - mins)
+            # In cases where max = min we'll have a division by zero error.
+            edges['weight'] = edges['weight'].fillna(0.5)
         edges = edges[edges['weight'] >= threshold]
         if binary:
-            edges[edges['weight'] > 0]['weight'] = 1
+            edges.loc[edges['weight'] > 0, 'weight'] = 1
 
         edges, ids_to_names = replace_nodes_with_ids(edges)
         edges = edges.sort_values('t')
@@ -68,14 +97,14 @@ class TemporalNetwork:
             edges['t'] -= start_time
 
         teneto_network = teneto.TemporalNetwork(from_df=edges)
-        return _class(teneto_network, start_time, ids_to_names)
+        return _class(teneto_network, start_time, ids_to_names, edge_list=edges)
 
     @classmethod
     def from_static_network_and_edge_list_dataframe(
             _class,
             static_network,
             edges,
-            normalise=False,
+            normalise=None,
             threshold=0,
             binary=False):
 
@@ -85,7 +114,9 @@ class TemporalNetwork:
         # node, time and (optionally) weight, respectively. If the weight column is omitted then all weights are
         # taken to be 1.
 
-        # If 'normalise' is True, all weights will be divided through by the max weight across all edges.
+        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
+        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
+        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
 
         # For nodes i and j, if the static network contains an edge ij, and at time t the edge ij has weight w at
         # least 'threshold' (after normalisation), then the temporal network will contain an edge ij at time t of
@@ -120,7 +151,7 @@ class TemporalNetwork:
             static_network,
             nodes,
             combine_node_weights=lambda x, y: x * y,
-            normalise=False,
+            normalise=None,
             threshold=0,
             binary=False):
 
@@ -129,7 +160,9 @@ class TemporalNetwork:
         # 'nodes' should be a pandas.DataFrame with two or three columns, representing node, time and (optionally)
         # weight, respectively. If the weight column is omitted then all weights are taken to be 1.
 
-        # If 'normalise' is True, all weights will be divided through by the max weight across all edges.
+        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
+        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
+        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
 
         # For nodes i and j, if the static network contains an edge ij, and at time t the edge ij has weight r at
         # least 'threshold' (after normalisation), then the temporal network will contain an edge ij at time t of
@@ -174,7 +207,7 @@ class TemporalNetwork:
             static_network,
             node_table,
             combine_node_weights=lambda x, y: x * y,
-            normalise=False,
+            normalise=None,
             threshold=0,
             binary=False):
 

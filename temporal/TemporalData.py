@@ -9,23 +9,28 @@ comparators = {'minima': np.less, 'maxima': np.greater}
 
 
 class TemporalData:
+    """ Class representing any sort of temporal data for a specified list of variables"""
     def __init__(self, temporal_data, variables, times, true_times):
-        # 'variables' should be a list (NOT, for example, a numpy array)
         self.temporal_data = temporal_data
+        # 'variables' should be a list (NOT, for example, a numpy array)
         self.variables = variables
+
+        # teneto's TemporalNetwork class requires all times to start at 0. For compatibility, do the same here.
         self.times = times
         self.true_times = true_times
 
     @classmethod
     def from_ODEs(class_, filepath, start_time=None, end_time=None, xpp_alias='xppaut'):
-        # If given, start time should be inclusive and end_time should be exclusive.
-        times_and_series, series_names = xpprun(filepath, xppname=xpp_alias, clean_after=True)
+        # Get temporal data by solving a system of ODEs, using the solver XPP. XPP must be installed and available on
+        # your PATH - xpp_alias should be the name of XPP on this PATH.
+        times_and_series, variables = xpprun(filepath, xppname=xpp_alias, clean_after=True)
 
         # Since our temporal network has had times shifted to start at zero, do the same here.
+        # If given, start time should be inclusive and end_time should be exclusive.
         true_times = times_and_series[start_time:end_time, 0]
         times = true_times if not start_time else true_times - start_time
-        all_series = times_and_series[start_time:end_time, 1:]
-        return class_(all_series, series_names, times, true_times)
+        temporal_data = times_and_series[start_time:end_time, 1:]
+        return class_(temporal_data, variables, times, true_times)
 
     def series(self, variable):
         return self.temporal_data[:, self.variables.index(variable)]

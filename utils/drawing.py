@@ -7,6 +7,10 @@ from matplotlib.colors import ListedColormap
 
 
 def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, ylabel, fig, axes):
+    """
+    Method to tidy up cases where we have a grid of plots with shared axes, e.g. by deleting unused subplots (if
+    number of of subplots is not rectangular) and adding axes ticks.
+    """
     if rows > 1:
         axes_left = axes[:, 0]
     else:
@@ -14,9 +18,11 @@ def label_subplot_grid_with_shared_axes(rows, columns, total_subplots, xlabel, y
     for ax in axes_left:
         ax.set_ylabel(ylabel)
 
+    # Bottom row will potentially have fewer subplots than all other rows.
     size_of_extra_row = total_subplots % columns
 
     if size_of_extra_row != 0 and rows > 1:
+        # Delete blank subplots and add x-axis ticks to subplots on penultimate row above blank subplots
         blank_axes = axes[-1, size_of_extra_row:]
         above_blank_axes = axes[-2, size_of_extra_row:]
         axes_on_extra_row = axes[-1, :size_of_extra_row]
@@ -47,6 +53,7 @@ def configure_sch_color_map(cmap):
 
 
 def adjust_margin(ax=None, top=0, bottom=0, left=0, right=0):
+    # Extend the margin of a plot by a percentage of its original width/height
     if ax is None:
         ax = plt.gca()
 

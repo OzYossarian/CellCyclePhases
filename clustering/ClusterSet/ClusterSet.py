@@ -6,6 +6,13 @@ import scipy.cluster.hierarchy as sch
 
 
 class ClusterSet:
+    """
+    Class representing a set of clusters
+
+    limit_type refers to the method used to decide when to stop clustering when creating this cluster set.
+    e.g. a cluster set can be created by clustering until a partiuclar number of clusters has been reached, or
+    until every cluster is at least a certain distance away from each other.
+    """
     def __init__(self, clusters, snapshots, cluster_limit_type, cluster_limit, silhouette):
         self.clusters = clusters
         self.snapshots = snapshots
@@ -23,7 +30,10 @@ class ClusterSet:
         if ax is None:
             ax = plt.gca()
 
+        # Calculate the distance threshold at which clusters stop, so that below this threshold we plot the
+        # dendrogram in colour, while above it we plot in black.
         distance_threshold = self.distance_threshold()
+
         sch.dendrogram(
             self.snapshots.linkage,
             leaf_rotation=leaf_rotation,
@@ -37,20 +47,23 @@ class ClusterSet:
         if ax is None:
             ax = plt.gca()
 
+        # If there are more than 10 clusters in this cluster set, we'll need to use more colours in our plot.
         sb.set_palette("tab20" if self.size > 10 else "tab10")
 
         if self.silhouette.samples.size > 0:
-            # Aggregate the silhouette scores for samples belonging to each cluster, and sort them
             y_lower = 0
             for i, cluster in enumerate(np.unique(self.clusters)):
+                # Aggregate the silhouette scores for samples belonging to each cluster, and sort them
                 silhouette_values = self.silhouette.samples[self.clusters == cluster]
                 silhouette_values.sort()
                 silhouette_size = silhouette_values.shape[0]
+
+                # Calculate height of this cluster
                 y_upper = y_lower + silhouette_size
                 y = np.arange(y_lower, y_upper)
                 ax.fill_betweenx(y, 0, silhouette_values, facecolor=f"C{i}", edgecolor=f"C{i}", alpha=1)
 
-                # Compute the new y_lower for next plot
+                # Compute the new y_lower for next cluster
                 vertical_padding = 0
                 y_lower = y_upper + vertical_padding
 

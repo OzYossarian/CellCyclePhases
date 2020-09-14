@@ -2,12 +2,18 @@ import numpy as np
 import pandas as pd
 import teneto
 
+
 class TemporalNetwork:
-    def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None, edge_list=None):
+    """
+    A wrapper class around teneto's TemporalNetwork class, adding a few extra properties.
+    """
+    def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None):
         self.teneto_network = teneto_network
+        # teneto's TemporalNetwork requires that all times start at 0, so record here how much we've shifted times by.
         self.time_shift = time_shift
+        # teneto's TemporalNetwork requires nodes to be numeric, so record here a dictionary mapping numeric node names
+        # to more descriptive names.
         self.node_ids_to_names = node_ids_to_names
-        self.edge_list = edge_list
 
         # Keep track of the 'true' times, even though we've shifted to start at 0
         if teneto_network.sparse:
@@ -16,21 +22,18 @@ class TemporalNetwork:
             self.times = np.array(range(teneto_network.T))
         self.true_times = self.times + time_shift
 
-        # Expose relevant methods of underlying teneto network - add more as needed
-        self.T = self.teneto_network.T
+    # Expose relevant methods of underlying teneto network - add more as needed
+
+    def T(self):
+        # Return the number of timepoints in the temporal network
+        return self.teneto_network.T
 
     def get_snapshots(self):
+        # Return the representation of the network as a sequence of adjacency matrices, one for each timepoint
         array = self.teneto_network.df_to_array() if self.sparse() else self.teneto_network.network
+        # Make 'time' the 0th axis
         snapshots = np.swapaxes(array, 0, 2)
         return snapshots
-
-    def get_edgelist(self):
-        if self.edge_list is not None:
-            return self.edge_list.copy()
-        elif not self.sparse():
-            return self.teneto_network.network
-        else:
-            raise ValueError('Temporal network is not a format that allows edge list to be returned.')
 
     def sparse(self):
         return self.teneto_network.sparse
@@ -97,7 +100,7 @@ class TemporalNetwork:
             edges['t'] -= start_time
 
         teneto_network = teneto.TemporalNetwork(from_df=edges)
-        return _class(teneto_network, start_time, ids_to_names, edge_list=edges)
+        return _class(teneto_network, start_time, ids_to_names)
 
     @classmethod
     def from_static_network_and_edge_list_dataframe(
@@ -130,11 +133,17 @@ class TemporalNetwork:
             raise ValueError('Edge list should have either 3 or 4 columns.')
         edges.columns = ['i', 'j', 't', 'w']
 
+        # Our fastest option throughout this method is to merge DataFrames. So begin by converting static network's
+        # edges to a DataFrame.
         static_network_edges = pd.DataFrame(static_network.edges)
         static_network_edges.columns = ['static_i', 'static_j']
+        # Merge edges from static network into our temporal edge list; we do it twice to account for the direction
+        # of nodes in the static network - ultimately we want an undirected temporal network.
         edges = edges.merge(static_network_edges, how='left', left_on=['i', 'j'], right_on=['static_i', 'static_j'])
         edges = edges.merge(static_network_edges, how='left', left_on=['i', 'j'], right_on=['static_j', 'static_i'])
 
+        # Rows in the DataFrame with no value in static_i_x AND static_i_x are exactly those that had no corresponding
+        # edge in the static network. So remove these edges, informing the user of this fact.
         missing_edges_indices = edges['static_i_x'].isnull() & edges['static_i_y'].isnull()
         if missing_edges_indices.any():
             missing_edges = edges[missing_edges_indices]
@@ -179,10 +188,14 @@ class TemporalNetwork:
             raise ValueError('Node list must have either 2 or 3 columns.')
         nodes.columns = ['i', 't', 'w']
 
+        # Our fastest option throughout this method is to merge DataFrames. So begin by converting static network's
+        # nodes to a DataFrame.
         static_network_nodes = pd.DataFrame(static_network.nodes)
         static_network_nodes.columns = ['static_i']
         nodes = nodes.merge(static_network_nodes, how='left', left_on='i', right_on='static_i')
 
+        # Rows in the DataFrame with no value in static_i are exactly those that had no corresponding node in the
+        # static network. So remove these edges, informing the user of this fact.
         missing_nodes_indices = nodes['static_i'].isnull()
         if missing_nodes_indices.any():
             missing_nodes = nodes[missing_nodes_indices]
@@ -190,7 +203,7 @@ class TemporalNetwork:
 
         # Only keep nodes that are present in the static network
         nodes = nodes[~missing_nodes_indices][['i', 't', 'w']]
-        # Merge to form temporal edge data
+        # Merge nodes with themselves to form temporal edge data
         edges = nodes.merge(nodes, left_on='t', right_on='t', suffixes=('_1', '_2'))
         # Remove duplicates and self-loops
         edges = edges[edges['i_1'] < edges['i_2']]
@@ -218,6 +231,7 @@ class TemporalNetwork:
         # which should be numeric values. For other parameters, see 'from_static_network_and_node_list_dataframe'.
 
         def get_node_list(node_table, node):
+            # Turn the column representing a particular node into a list of temporal edges.
             node_list = node_table[node].to_frame()
             node_list['i'] = node
             node_list['t'] = node_list.index
@@ -225,6 +239,8 @@ class TemporalNetwork:
             node_list.columns = ['i', 't', 'w']
             return node_list
 
+        # For each node in the table, create a list of temporal edges for that node, then concatenate all such lists
+        # together to create the total edge list.
         node_lists = [get_node_list(node_table, node) for node in node_table.columns]
         node_list = pd.concat(node_lists, ignore_index=True)
 
@@ -238,8 +254,12 @@ def replace_nodes_with_ids(edges):
     unique_nodes.columns = ['id', 'name']
     ids_to_names = unique_nodes.to_dict()['name']
 
+    # Replace all occurrences of a node name with its new numeric ID. We do this using merges for efficiency purposes.
+    # Merge unique nodes onto our original edge list twice - once for when the node is the source node of an edge, and
+    # again for when the node is the target node of an edge.
     edges = edges.merge(unique_nodes, how='left', left_on='i', right_on='name')
     edges = edges.merge(unique_nodes, how='left', left_on='j', right_on='name')
+    # Now restrict to four columns again, but now using node IDs instead of node names.
     edges = edges[['id_x', 'id_y', 't', 'weight']]
     edges.columns = ['i', 'j', 't', 'weight']
 

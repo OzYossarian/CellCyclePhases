@@ -4,6 +4,9 @@ from sklearn import metrics
 
 
 class Silhouette:
+    """
+    The silhouette of a cluster set is a measure of how 'good' the clustering is.
+    """
     def __init__(self, distance_data, clusters, metric):
         try:
             self.average = metrics.silhouette_score(distance_data, clusters, metric=metric)

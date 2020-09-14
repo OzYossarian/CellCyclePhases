@@ -8,6 +8,11 @@ from utils.plotting import plot_phases, plot_events
 
 
 class ClusterSets(Sequence):
+    """
+    Class representing a range of cluster sets - e.g. for a range of cluster sets created by stopping clustering
+    after 2 clusters have formed, then 3 clusters, then 4, ..., etc. In order to plot data across a range of cluster
+    sets, it is useful to have a dedicated class for rather than (e.g.) just using a Python list of ClusterSet objects
+    """
     def __init__(self, cluster_sets, snapshots, limit_type):
         self._cluster_sets = cluster_sets
         self.snapshots = snapshots

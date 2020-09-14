@@ -4,6 +4,11 @@ from collections import Sequence
 
 
 class Silhouettes(Sequence):
+    """
+    Class representing silhouettes for a range of cluster sets, as opposed to a single cluster set.
+    As with the ClusterSets class, when plotting it's useful to have a class dedicated to representing a range
+    of silhouettes, rather than just using a Python list of Silhouette objects.
+    """
     def __init__(self, silhouettes):
         self._silhouettes = silhouettes
         self.averages = np.array([silhouette.average for silhouette in silhouettes])

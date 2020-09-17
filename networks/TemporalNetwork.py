@@ -109,7 +109,8 @@ class TemporalNetwork:
             edges,
             normalise=None,
             threshold=0,
-            binary=False):
+            binary=False,
+            static_edges_default=None):
 
         # 'static_network' should be a networkx.Graph.
 
@@ -127,6 +128,10 @@ class TemporalNetwork:
 
         # If 'binary' is True, then any positive edges that exceed the threshold will be set to 1.
 
+        # If there are edges in the static network that aren't present in 'edges' then 'static_edges_default'
+        # determines what to do with these. If set to None, these static edges are simply ignored. If set to a
+        # numerical value k, these static edges are given weight k across all timepoints.
+
         if len(edges.columns) == 3:
             edges['w'] = 1
         elif len(edges.columns) != 4:
@@ -137,21 +142,41 @@ class TemporalNetwork:
         # edges to a DataFrame.
         static_network_edges = pd.DataFrame(static_network.edges)
         static_network_edges.columns = ['static_i', 'static_j']
-        # Merge edges from static network into our temporal edge list; we do it twice to account for the direction
-        # of nodes in the static network - ultimately we want an undirected temporal network.
-        edges = edges.merge(static_network_edges, how='left', left_on=['i', 'j'], right_on=['static_i', 'static_j'])
-        edges = edges.merge(static_network_edges, how='left', left_on=['i', 'j'], right_on=['static_j', 'static_i'])
 
-        # Rows in the DataFrame with no value in static_i_x AND static_i_x are exactly those that had no corresponding
-        # edge in the static network. So remove these edges, informing the user of this fact.
-        missing_edges_indices = edges['static_i_x'].isnull() & edges['static_i_y'].isnull()
-        if missing_edges_indices.any():
-            missing_edges = edges[missing_edges_indices]
-            missing_edges = list(zip(missing_edges['i'], missing_edges['j']))
-            print(f'WARNING: The following edges were not found in the static network:\n{missing_edges}')
+        # Sort the first two columns of each DataFrame so that edges are pairs (i, j) with i <= j. This allows
+        # us to merge DataFrames together without regard for the direction of the edges (i.e. whether we have an
+        # edge (i,j) or (j,i)).
+        static_network_edges[['static_i', 'static_j']] = np.sort(static_network_edges[['static_i', 'static_j']], axis=1)
+        edges[['i', 'j']] = np.sort(edges[['i', 'j']], axis=1)
 
-        # Only keep edges that are present in the static network
-        edges = edges[~missing_edges_indices][['i', 'j', 't', 'w']]
+        # Merge edges from static network into our temporal edge list.
+        if static_edges_default is None:
+            # We only want edges that appear in both the temporal edge list and the static network. We could do this
+            # with an inner join, but we want to inform the user of edges in the temporal edge list that weren't
+            # matched to any in the static network. So we use a left join initially.
+            edges = edges.merge(static_network_edges, how='left', left_on=['i', 'j'], right_on=['static_i', 'static_j'])
+        else:
+            # We want edges that appear in both the temporal edge list and the static network, and we additionally
+            # want to add constant temporal data for edges in the static network but not in the temporal edge list.
+            edges = edges.merge(static_network_edges, how='outer', left_on=['i', 'j'], right_on=['static_i', 'static_j'])
+            # Rows in the DataFrame with no value in column i are those from the static network that had no
+            # corresponding edge in the temporal data.
+            message = f'The following static edges have no temporal data and will have default weight ' \
+                      f'{static_edges_default} across all time points'
+            edges, static_missing_edges = remove_missing_edges(edges, 'i', ['static_i', 'static_j'], message)
+
+        message = 'The following edges were not found in the static network'
+        edges, _ = remove_missing_edges(edges, 'static_i', ['i', 'j'], message)
+        edges = edges[['i', 'j', 't', 'w']]
+
+        if static_edges_default is not None and not static_missing_edges.empty:
+            # Add default weights across all timepoints for the static edges that have no temporal data.
+            times = edges['t'].drop_duplicates().to_frame().assign(w=static_edges_default)
+            temporal_static_edges = static_missing_edges[['static_i', 'static_j']].assign(w=static_edges_default)
+            temporal_static_edges = temporal_static_edges.merge(times, on='w')[['static_i', 'static_j', 't', 'w']]
+            temporal_static_edges.columns = ['i', 'j', 't', 'w']
+            edges = pd.concat([edges[['i', 'j', 't', 'w']], temporal_static_edges], ignore_index=True)
+
         return _class.from_edge_list_dataframe(edges, normalise, threshold, binary)
 
     @classmethod
@@ -162,25 +187,18 @@ class TemporalNetwork:
             combine_node_weights=lambda x, y: x * y,
             normalise=None,
             threshold=0,
-            binary=False):
+            binary=False,
+            static_edges_default=None):
 
         # 'static_network' should be a networkx.Graph.
 
         # 'nodes' should be a pandas.DataFrame with two or three columns, representing node, time and (optionally)
         # weight, respectively. If the weight column is omitted then all weights are taken to be 1.
 
-        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
-        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
-        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
-
-        # For nodes i and j, if the static network contains an edge ij, and at time t the edge ij has weight r at
-        # least 'threshold' (after normalisation), then the temporal network will contain an edge ij at time t of
-        # weight r. Here r is the result of passing the weight of i and the weight of j to 'combine_node_weights'
-
         # Note that 'combine_node_weights' is applied to whole columns at a time, for efficiency. Therefore any
         # unvectorizable lambda functions will throw an error.
 
-        # If 'binary' is True, then any positive edges that exceed the threshold will be set to 1.
+        # For other parameters, see from_static_network_and_edge_list_dataframe.
 
         if len(nodes.columns) == 2:
             nodes['w'] = 1
@@ -211,8 +229,8 @@ class TemporalNetwork:
         edges['r'] = combine_node_weights(edges['w_1'], edges['w_2'])
         edges = edges[['i_1', 'i_2', 't', 'r']]
 
-        return _class.from_edge_list_dataframe(edges, normalise, threshold, binary)
-
+        return _class.from_static_network_and_edge_list_dataframe(
+            static_network, edges, normalise, threshold, binary, static_edges_default)
 
     @classmethod
     def from_static_network_and_node_table_dataframe(
@@ -222,13 +240,16 @@ class TemporalNetwork:
             combine_node_weights=lambda x, y: x * y,
             normalise=None,
             threshold=0,
-            binary=False):
+            binary=False,
+            static_edges_default=None):
 
         # 'static_network' should be a networkx.Graph.
 
         # 'temporal_node_table' should be a pandas.DataFrame whose columns represent the nodes of the graph,
         # and whose rows contain the temporal data for those nodes. The DataFrame should be indexed by time points,
-        # which should be numeric values. For other parameters, see 'from_static_network_and_node_list_dataframe'.
+        # which should be numeric values.
+
+        # For other parameters, see 'from_static_network_and_node_list_dataframe'.
 
         def get_node_list(node_table, node):
             # Turn the column representing a particular node into a list of temporal edges.
@@ -245,7 +266,17 @@ class TemporalNetwork:
         node_list = pd.concat(node_lists, ignore_index=True)
 
         return _class.from_static_network_and_node_list_dataframe(
-            static_network, node_list, combine_node_weights, normalise, threshold, binary)
+            static_network, node_list, combine_node_weights, normalise, threshold, binary, static_edges_default)
+
+
+def remove_missing_edges(edges, null_column, print_columns, message):
+    missing_edges_indices = edges[null_column].isnull()
+    missing_edges = edges[missing_edges_indices]
+    if not missing_edges.empty:
+        printable_missing = list(zip(*[missing_edges[column] for column in print_columns]))
+        print(f'{message}:\n{printable_missing}')
+        edges = edges[~missing_edges_indices]
+    return edges, missing_edges
 
 
 def replace_nodes_with_ids(edges):

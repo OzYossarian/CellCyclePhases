@@ -41,24 +41,26 @@ class TemporalData:
         optima = series[optima_times]
         return optima, optima_times
 
-    def plot_relative_optima(self, variable, optima_type, ax=None):
-        ax.plot(self.times, self.series(variable), 'o-')
+    def plot_relative_optima(self, variable, optima_type, ax=None, use_true_times=True):
+        times = self.true_times if use_true_times else self.times
+        ax.plot(times, self.series(variable), 'o-')
         mass_minima, mass_minima_times = self.relative_optima(variable, optima_type)
-        ax.plot(self.times[mass_minima_times], mass_minima, 'ro')
+        ax.plot(times[mass_minima_times], mass_minima, 'ro')
 
-    def plot_series(self, variables, ax=None, norm=False, add_labels=True, labels_xvals=None):
+    def plot_series(self, variables, ax=None, norm=False, add_labels=True, labels_xvals=None, use_true_times=True):
         if ax is None:
             ax = plt.gca()
+        times = self.true_times if use_true_times else self.times
 
         for variable in variables:
             y = normed(self.series(variable)) if norm else self.series(variable)
-            ax.plot(self.times, y, label=variable)
+            ax.plot(times, y, label=variable)
 
         if add_labels:
             if not labels_xvals:
                 # Add evenly-spaced labels
-                labels_interval = len(self.times) // (len(variables) + 1)
-                labels_xvals = [self.times[labels_interval * (i + 1)] for i in range(len(variables))]
+                labels_interval = len(times) // (len(variables) + 1)
+                labels_xvals = [times[labels_interval * (i + 1)] for i in range(len(variables))]
             labelLines(ax.get_lines(), zorder=2.5, xvals=labels_xvals)
 
 

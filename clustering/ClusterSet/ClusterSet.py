@@ -6,14 +6,22 @@ import scipy.cluster.hierarchy as sch
 
 
 class ClusterSet:
-    """
-    Class representing a set of clusters
+    """Class representing a set of clusters."""
 
-    limit_type refers to the method used to decide when to stop clustering when creating this cluster set.
-    e.g. a cluster set can be created by clustering until a partiuclar number of clusters has been reached, or
-    until every cluster is at least a certain distance away from each other.
-    """
     def __init__(self, clusters, snapshots, cluster_limit_type, cluster_limit, silhouette):
+        """
+        Parameters
+        __________
+        clusters - whatever data is being used to represent the clustering - see subclasses.
+        snapshots - a Snapshots object.
+        cluster_limit_type - the method that was used to determine when to stop clustering when creating this cluster
+            set. e.g. A cluster set can be created by clustering until a particular number of clusters has been
+            reached ('maxclust'), or until every cluster is at least a certain distance away from each other
+            ('distance').
+        cluster_limit - the value corresponding to the cluster_limit_type described above.
+        silhouette - a Silhouette object.
+        """
+
         self.clusters = clusters
         self.snapshots = snapshots
         self.size = len(set(clusters))
@@ -22,11 +30,35 @@ class ClusterSet:
         self.silhouette = silhouette
 
     def plot(self, ax=None, y_height=0, cmap=cm.get_cmap('tab10'), number_of_colors=10, use_true_times=True):
+        """Plot this cluster set as a scatter graph
+
+        Parameters
+        __________
+        ax - the matplotlib axes on which to plot
+        y_height - the height at which to plot
+        cmap - the desired colour map
+        number_of_colors - the desired number of colours to use
+        use_true_times - whether or not to use the 'true' times from the dataset or offset the times so that the first
+            timepoint is zero.
+        """
+
+        if ax is None:
+            ax = plt.gca()
+
         times = self.snapshots.true_times if use_true_times else self.snapshots.times
         y = np.ones(len(times)) * y_height
         ax.scatter(times, y, c=self.clusters, cmap=cmap, vmin=1, vmax=number_of_colors)
 
     def plot_dendrogram(self, ax=None, leaf_rotation=90, leaf_font_size=6):
+        """Plot this cluster set as a dendrogram
+
+        Parameters
+        __________
+        ax - the matplotlib axes on which to plot
+        leaf_rotation - the rotation to apply to the x-axis (leaf) labels
+        leaf_font_size - the desired size of the x-axis (leaf) labels
+        """
+
         if ax is None:
             ax = plt.gca()
 
@@ -44,6 +76,13 @@ class ClusterSet:
         ax.axhline(y=distance_threshold, c='grey', ls='--', zorder=1)
 
     def plot_silhouette_samples(self, ax=None):
+        """Plot the silhouette samples from this cluster set
+
+        Parameters
+        __________
+        ax - the matplotlib axes on which to plot
+        """
+
         if ax is None:
             ax = plt.gca()
 
@@ -70,6 +109,13 @@ class ClusterSet:
         ax.axvline(x=self.silhouette.average, c='k', ls='--')
 
     def distance_threshold(self):
+        """Calculate the distance at which clustering stops
+
+        Returns
+        _______
+        The smallest number d such that the distance between any two clusters is < d.
+        """
+
         number_of_observations = self.snapshots.linkage.shape[0] + 1
         if self.size >= number_of_observations:
             return 0

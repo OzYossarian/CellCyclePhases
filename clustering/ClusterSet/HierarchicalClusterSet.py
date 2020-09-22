@@ -5,10 +5,13 @@ from clustering.Silhouette import Silhouette
 
 
 class HierarchicalClusterSet(ClusterSet):
-    """
-    Subclass of ClusterSet, to be used for any clusters created by a hierarchical method
-    """
+    """Subclass of ClusterSet, to be used for any clusters created by a hierarchical method"""
+
     def __init__(self, snapshots, cluster_limit_type, cluster_limit):
+        """
+        See base class for parameter info
+        """
+
         if snapshots.linkage is not None:
             clusters = sch.fcluster(snapshots.linkage, cluster_limit, criterion=cluster_limit_type)
         else:

@@ -4,15 +4,25 @@ import teneto
 
 
 class TemporalNetwork:
+    """A wrapper class around teneto's TemporalNetwork class
+
+    The main reason for doing this is that teneto requires that the time points in the temporal network start at zero.
+    Since it is often more useful to use the actual time points from the underlying dataset, we create a wrapper class,
+    exposing/adding a few other methods/properties too.
     """
-    A wrapper class around teneto's TemporalNetwork class, adding a few extra properties.
-    """
+
     def __init__(self, teneto_network, time_shift=0, node_ids_to_names=None):
+        """
+        Parameters
+        __________
+        teneto_network - a teneto.TemporalNetwork object
+        time_shift - how much we've shifted the data's time points by in order to start at zero
+        node_ids_to_names - a dictionary whose keys are node IDs (integers) and values (of any type) are more
+            descriptive names for nodes.
+        """
+
         self.teneto_network = teneto_network
-        # teneto's TemporalNetwork requires that all times start at 0, so record here how much we've shifted times by.
         self.time_shift = time_shift
-        # teneto's TemporalNetwork requires nodes to be numeric, so record here a dictionary mapping numeric node names
-        # to more descriptive names.
         self.node_ids_to_names = node_ids_to_names
 
         # Keep track of the 'true' times, even though we've shifted to start at 0
@@ -22,14 +32,15 @@ class TemporalNetwork:
             self.times = np.array(range(teneto_network.T))
         self.true_times = self.times + time_shift
 
-    # Expose relevant methods of underlying teneto network - add more as needed
 
     def T(self):
-        # Return the number of timepoints in the temporal network
+        """Returns: the number of time points in the temporal network"""
+
         return self.teneto_network.T
 
     def get_snapshots(self):
-        # Return the representation of the network as a sequence of adjacency matrices, one for each timepoint
+        """Returns: the representation of the network as a sequence of adjacency matrices, one for each time point"""
+
         array = self.teneto_network.df_to_array() if self.sparse() else self.teneto_network.network
         # Make 'time' the 0th axis
         snapshots = np.swapaxes(array, 0, 2)
@@ -39,34 +50,64 @@ class TemporalNetwork:
         return self.teneto_network.sparse
 
     def node_name(self, id):
-        if self.node_ids_to_names is None:
+        """Get descriptive node name
+
+        Parameters
+        __________
+        id - the integer ID of the node
+
+        Returns
+        _______
+        The more descriptive name for this node, defaulting to 'id' if no descriptive name exists.
+        """
+
+        if self.node_ids_to_names is None or id not in self.node_ids_to_names:
             return id
         else:
             return self.node_ids_to_names[id]
 
     @classmethod
     def from_snapshots_numpy_array(_class, snapshots, node_ids_to_names=None):
-        # 'snapshots' should be a numpy.array with dimensions (time, nodes, nodes)
+        """Create a TemporalNetwork from snapshots
+
+        Parameters
+        __________
+        snapshots -  a numpy.array with dimensions (time, nodes, nodes)
+        node_ids_to_names - a dictionary whose keys (integers) are node IDs and values (of any type) are more
+            descriptive names for nodes.
+        """
+
         array = np.swapaxes(snapshots, 0, 2)
         return _class.from_numpy_array(array, node_ids_to_names)
 
     @classmethod
     def from_numpy_array(_class, array, node_ids_to_names=None):
-        # 'array' should be a numpy.array with dimensions (nodes, nodes, time)
+        """Create a TemporalNetwork from an array representation of the network
+
+        Parameters
+        __________
+        array - a numpy.array with dimensions (nodes, nodes, time)
+        node_ids_to_names - a dictionary whose keys (integers) are node IDs and values (of any type) are more
+            descriptive names for nodes.
+        """
+
         teneto_network = teneto.TemporalNetwork(from_array=array)
         return _class(teneto_network, node_ids_to_names=node_ids_to_names)
 
     @classmethod
-    def from_edge_list_dataframe(_class, edges, normalise=False, threshold=0, binary=False):
-        # 'edges' should be a pandas.DataFrame
+    def from_edge_list_dataframe(_class, edges, normalise=None, threshold=0, binary=False):
+        """Create a TemporalNetwork from a DataFrame of edges over time
 
-        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
-        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
-        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
-
-        # Any edges with weight < 'threshold' (after normalising) will not be included in the temporal network.
-
-        # If binary = True, all positive weights (after thresholding) will be set to 1.
+        Parameters
+        __________
+        edges - a pandas.DataFrame with columns representing source node, target node, time and (optionally) weight
+        normalise - a value determining what (if any) normalisation is applied. If 'normalise' is 'global', all weights
+            will be divided through by the max weight across all edges. If 'normalise' is 'local', all weights
+            corresponding to an edge (i,j) at some time will be divided through by the max weight of the edge (i,j)
+            across all times. To skip normalisation, set to None.
+        threshold - any edges with weight < 'threshold' (after normalising) will not be included in the temporal network
+        binary - if True, all positive weights (after thresholding) will be set to 1. If False, does nothing.
+        """
 
         number_of_columns = edges.shape[1]
         if number_of_columns == 3:
@@ -111,26 +152,25 @@ class TemporalNetwork:
             threshold=0,
             binary=False,
             static_edges_default=None):
+        """Create a TemporalNetwork from a static network and a DataFrame of temporal edges
 
-        # 'static_network' should be a networkx.Graph.
+        Given a static network and a set of edges across different times, we can create a temporal network by including
+        temporal edge (i,j,t) if edge the static network contains an edge (i,j).
 
-        # 'edges' should be a pandas.DataFrame with with three or four columns, representing source node, target
-        # node, time and (optionally) weight, respectively. If the weight column is omitted then all weights are
-        # taken to be 1.
-
-        # If 'normalise' is 'global', all weights will be divided through by the max weight across all edges.
-        # If 'normalise' is 'local', all weights corresponding to an edge (i,j) at some time will be divided
-        # through by the max weight of an edge (i,j) across all times. To skip normalisation, set normalise=None.
-
-        # For nodes i and j, if the static network contains an edge ij, and at time t the edge ij has weight w at
-        # least 'threshold' (after normalisation), then the temporal network will contain an edge ij at time t of
-        # weight w.
-
-        # If 'binary' is True, then any positive edges that exceed the threshold will be set to 1.
-
-        # If there are edges in the static network that aren't present in 'edges' then 'static_edges_default'
-        # determines what to do with these. If set to None, these static edges are simply ignored. If set to a
-        # numerical value k, these static edges are given weight k across all timepoints.
+        Parameters
+        __________
+        static_network - a networkx.Graph object representing the underlying static network
+        edges - a pandas.DataFrame with columns representing source node, target node, time and (optionally) weight
+        normalise - a value determining what (if any) normalisation is applied. If 'normalise' is 'global', all weights
+            will be divided through by the max weight across all edges. If 'normalise' is 'local', all weights
+            corresponding to an edge (i,j) at some time will be divided through by the max weight of the edge (i,j)
+            across all times. To skip normalisation, set to None.
+        threshold - any edges with weight < 'threshold' (after normalising) will not be included in the temporal network
+        binary - if True, all positive weights (after thresholding) will be set to 1. If False, does nothing.
+        static_edges_default - if there are edges in the static network that aren't present in 'edges' then
+            'static_edges_default' determines what to do with these. If set to None, these static edges are simply
+            ignored. If set to a numerical value k, these static edges are given weight k across all time points.
+        """
 
         if len(edges.columns) == 3:
             edges['w'] = 1
@@ -189,16 +229,28 @@ class TemporalNetwork:
             threshold=0,
             binary=False,
             static_edges_default=None):
+        """Create a TemporalNetwork from a static network and a DataFrame of temporal nodes
 
-        # 'static_network' should be a networkx.Graph.
+        Given a static network and a set of nodes across different times, we can create a temporal network by including
+        temporal edge (i,j,t) if edge the static network contains an edge (i,j).
 
-        # 'nodes' should be a pandas.DataFrame with two or three columns, representing node, time and (optionally)
-        # weight, respectively. If the weight column is omitted then all weights are taken to be 1.
-
-        # Note that 'combine_node_weights' is applied to whole columns at a time, for efficiency. Therefore any
-        # unvectorizable lambda functions will throw an error.
-
-        # For other parameters, see from_static_network_and_edge_list_dataframe.
+        Parameters
+        __________
+        static_network - a networkx.Graph object representing the underlying static network
+        nodes - a pandas.DataFrame with columns representing node, time and (optionally) weight
+        combine_node_weights - a lambda determining how to combine two nodes' weights together to give the weight of
+            the corresponding edge. NOTE: this is applied to whole columns at a time, for efficiency. Therefore any
+            unvectorizable lambda functions will raise an exception.
+        normalise - a value determining what (if any) normalisation is applied. If 'normalise' is 'global', all weights
+            will be divided through by the max weight across all edges. If 'normalise' is 'local', all weights
+            corresponding to an edge (i,j) at some time will be divided through by the max weight of the edge (i,j)
+            across all times. To skip normalisation, set to None.
+        threshold - any edges with weight < 'threshold' (after normalising) will not be included in the temporal network
+        binary - if True, all positive weights (after thresholding) will be set to 1. If False, does nothing.
+        static_edges_default - if there are edges in the static network that aren't present in 'edges' then
+            'static_edges_default' determines what to do with these. If set to None, these static edges are simply
+            ignored. If set to a numerical value k, these static edges are given weight k across all time points.
+        """
 
         if len(nodes.columns) == 2:
             nodes['w'] = 1
@@ -242,14 +294,30 @@ class TemporalNetwork:
             threshold=0,
             binary=False,
             static_edges_default=None):
+        """Create a TemporalNetwork from a static network and a DataFrame of temporal nodes
 
-        # 'static_network' should be a networkx.Graph.
+        Given a static network and a set of nodes across different times, we can create a temporal network by including
+        temporal edge (i,j,t) if edge the static network contains an edge (i,j).
 
-        # 'temporal_node_table' should be a pandas.DataFrame whose columns represent the nodes of the graph,
-        # and whose rows contain the temporal data for those nodes. The DataFrame should be indexed by time points,
-        # which should be numeric values.
-
-        # For other parameters, see 'from_static_network_and_node_list_dataframe'.
+        Parameters
+        __________
+        static_network - a networkx.Graph object representing the underlying static network
+        node_table - a pandas.DataFrame whose columns represent the nodes of the graph, and whose rows
+            contain the temporal data for those nodes. The DataFrame should be indexed by time points, which should
+            be numeric values.
+        combine_node_weights - a lambda determining how to combine two nodes' weights together to give the weight of
+            the corresponding edge. NOTE: this is applied to whole columns at a time, for efficiency. Therefore any
+            unvectorizable lambda functions will raise an exception.
+        normalise - a value determining what (if any) normalisation is applied. If 'normalise' is 'global', all weights
+            will be divided through by the max weight across all edges. If 'normalise' is 'local', all weights
+            corresponding to an edge (i,j) at some time will be divided through by the max weight of the edge (i,j)
+            across all times. To skip normalisation, set to None.
+        threshold - any edges with weight < 'threshold' (after normalising) will not be included in the temporal network
+        binary - if True, all positive weights (after thresholding) will be set to 1. If False, does nothing.
+        static_edges_default - if there are edges in the static network that aren't present in 'edges' then
+            'static_edges_default' determines what to do with these. If set to None, these static edges are simply
+            ignored. If set to a numerical value k, these static edges are given weight k across all time points.
+        """
 
         def get_node_list(node_table, node):
             # Turn the column representing a particular node into a list of temporal edges.
@@ -270,6 +338,21 @@ class TemporalNetwork:
 
 
 def remove_missing_edges(edges, null_column, print_columns, message):
+    """Removes unwanted edges from a DataFrame based on their value in a certain column
+
+    Parameters
+    __________
+    edges - a DataFrame whose columns include null_column and every column in print_columns
+    null_column - the name n of the column such that if a row has a null value in column n then it will be removed
+    print_columns - the columns whose values to zip together when printing the list of edges removed
+    message - a string to preface the list of edges removed
+
+    Returns
+    _______
+    edges - the new dataframe with required edges removed
+    missing_edges - a dataframe containing all the edges that were removed
+    """
+
     missing_edges_indices = edges[null_column].isnull()
     missing_edges = edges[missing_edges_indices]
     if not missing_edges.empty:
@@ -280,6 +363,18 @@ def remove_missing_edges(edges, null_column, print_columns, message):
 
 
 def replace_nodes_with_ids(edges):
+    """Replace node names with integer IDs
+
+    Parameters
+    __________
+    edges - a DataFrame with nodes in columns 'i' and 'j'
+
+    Returns
+    _______
+    edges - the updated DataFrame with names replaced by IDs
+    ids_to_names - a dictionary mapping the new IDs to the old names
+    """
+
     unique_nodes = pd.concat([edges['i'], edges['j']]).to_frame().drop_duplicates(ignore_index=True)
     unique_nodes.reset_index(inplace=True)
     unique_nodes.columns = ['id', 'name']

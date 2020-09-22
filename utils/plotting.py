@@ -8,11 +8,24 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 from utils import drawing
 
 
-def plot_events(events, ax=None, y_pos=None, text_x_offset=0):
+def plot_events(events, ax=None, text_y_pos=None, text_x_offset=0):
+    """Plot events as vertical lines on axes
+
+    Parameters
+    __________
+    events - an iterable of tuples (time, name, line_style):
+        time - time at which the event occurred
+        name - the name of the event
+        line_style - any string accepted by matplotlib.lines.Line2D.set_linestyle
+    ax - the matplotlib axes on which to plot the events
+    text_y_pos - height at which to place the name of the event
+    text_x_offset - distance along x-axis by which to offset the placement of the event name
+    """
+
     if ax is None:
         ax = plt.gca()
-    if y_pos is None:
-        y_pos = 1.01 * ax.get_ylim()[1]
+    if text_y_pos is None:
+        text_y_pos = 1.01 * ax.get_ylim()[1]
     if text_x_offset < 0:
         text_x_offset = -text_x_offset
 
@@ -20,10 +33,21 @@ def plot_events(events, ax=None, y_pos=None, text_x_offset=0):
         time, name, line_style = event
         ax.axvline(x=time, c='k', ls=line_style, label=name, zorder=-1)
         text_x_pos = time - text_x_offset if time > 0 else time + text_x_offset
-        ax.text(text_x_pos, y_pos, name, fontsize='small', rotation=90, va='bottom', ha='center')
+        ax.text(text_x_pos, text_y_pos, name, fontsize='small', rotation=90, va='bottom', ha='center')
 
 
 def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
+    """Plot phases as shaded regions on axes
+
+    Parameters
+    __________
+    phases - an iterable of tuples (start_time, end_time, name)
+    ax - the matplotlib axes on which to plot the phases
+    y_pos - height at which to place the name of the phase
+    ymin - height at which to start shaded region
+    ymax - height at which to stop shaded region
+    """
+
     if ax is None:
         ax = plt.gca()
 
@@ -40,6 +64,18 @@ def plot_phases(phases, ax=None, y_pos=None, ymin=0, ymax=1):
 
 
 def threshold_plot(x, y, threshold, color_below_threshold, color_above_threshold, ax=None):
+    """Plot values above a certain threshold in a particular colour
+
+    Parameters
+    __________
+    x - values to plot along x-axis
+    y - values to plot along y-axis
+    threshold - only plot in colour the points (x,y) with y >= threshold
+    colour_below_threshold - colour to use for points below threshold
+    colour_above_threshold - colour to use for points above threshold
+    ax - the matplotlib axes to use
+    """
+
     if ax is None:
         ax = plt.gca()
 
@@ -66,11 +102,26 @@ def threshold_plot(x, y, threshold, color_below_threshold, color_above_threshold
     return line_collection
 
 
-def plot_interval(mask, times, y=0, peak=None, color='k', ax=None, zorder=0):
+def plot_interval(binary_series, times, y=0, peak=None, color='k', ax=None, zorder=0):
+    """Plot a binary series as a sequence of coloured intervals
+
+    Specifically, when a binary series has value 1, plot it as a continuous rectangular interval. When it has value 0
+    do nothing.
+
+    Parameters
+    __________
+    binary_series - a numpy array of binary data to plot
+    times - numpy array consisting of the corresponding time points
+    y - the height (y-axis value) at which to plot the interval
+    color - the color to use for the intervals
+    ax - the matplotlib axes to plot on
+    zorder - the height on the z-axis which to plot the interval
+    """
+
     if ax is None:
         ax = plt.gca()
 
-    xmins, xmaxs = drawing.get_extrema_of_binary_series(mask, times)
+    xmins, xmaxs = drawing.get_extrema_of_binary_series(binary_series, times)
     rect_height = 0.5
 
     for xmin, xmax in zip(xmins, xmaxs):
